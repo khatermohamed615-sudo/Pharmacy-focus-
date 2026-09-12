@@ -140,6 +140,7 @@
   .file-download-link { color: var(--navy-2); font-weight: 700; font-size: 13px; text-decoration: none; }
 </style>
 </head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <body>
 
 <div class="top-bar">
@@ -153,10 +154,15 @@
 <div class="tabs-row">
   <button class="tab-btn active" id="tabTasksBtn">المهام</button>
   <button class="tab-btn" id="tabManagerBtn">الإداريات</button>
+  <button class="tab-btn" id="tabCategoryBtn">Category</button>
 </div>
 
 <div id="tasksPage">
 <div class="container">
+  <div style="display:flex; gap:8px; margin-bottom:10px;">
+    <input class="mgr-search" id="taskSearchBox" placeholder="بحث في المهام..." style="margin:0; flex:1;" />
+    <button class="mgr-add-btn" id="exportTasksBtn" style="width:auto; margin:0; padding:0 14px; white-space:nowrap;">📤 تصدير</button>
+  </div>
   <div class="section-label">التركيز الحالي</div>
   <div class="active-card" id="activeCard"></div>
 
@@ -182,6 +188,10 @@
 
 <div id="managerPage" style="display:none">
   <div class="container" id="managerContainer"></div>
+</div>
+
+<div id="categoryPage" style="display:none">
+  <div class="container" id="categoryContainer"></div>
 </div>
 
 <div id="sheetRoot"></div>
@@ -212,6 +222,23 @@ function currentTasks() {
 }
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+// ============ تصدير CSV عام ============
+function downloadCSV(filename, headers, rows) {
+  const esc = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
+  const lines = [headers.map(esc).join(",")];
+  rows.forEach((r) => lines.push(headers.map((h) => esc(r[h])).join(",")));
+  const csv = "\uFEFF" + lines.join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+let taskFilterText = "";
 
 // ============ البروفايلات (تفرقة بسيطة بين اللي بيستخدموا نفس الجهاز - من غير باسورد حقيقي) ============
 function ensureProfile() {
@@ -428,10 +455,12 @@ function renderActive() {
 function renderLists() {
   const tasks = currentTasks();
   const today = new Date().toDateString();
+  const q = (taskFilterText || "").trim().toLowerCase();
+  const matches = (t) => !q || [t.note, t.refillIdNumber, t.refillPhone].some((v) => (v || "").toLowerCase().includes(q));
 
-  const openTasks = tasks.filter((t) => t.status === "open");
-  const parked = tasks.filter((t) => t.status === "park");
-  const doneToday = tasks.filter((t) => t.status === "done" && new Date(t.completedAt).toDateString() === today);
+  const openTasks = tasks.filter((t) => t.status === "open" && matches(t));
+  const parked = tasks.filter((t) => t.status === "park" && matches(t));
+  const doneToday = tasks.filter((t) => t.status === "done" && new Date(t.completedAt).toDateString() === today && matches(t));
 
   const order = { now: 0, next: 1, later: 2 };
   openTasks.sort((a, b) => order[a.urgency] - order[b.urgency]);
@@ -595,6 +624,20 @@ function openAddSheet() {
   document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
 }
 
+document.getElementById("taskSearchBox").oninput = (e) => { taskFilterText = e.target.value; renderLists(); };
+document.getElementById("exportTasksBtn").onclick = () => {
+  const tasks = currentTasks();
+  downloadCSV(
+    "tasks.csv",
+    ["note", "urgency", "status", "refillEnabled", "refillIdNumber", "refillPhone", "createdAt", "completedAt"],
+    tasks.map((t) => ({
+      note: t.note, urgency: t.urgency, status: t.status, refillEnabled: t.refillEnabled ? "نعم" : "لا",
+      refillIdNumber: t.refillIdNumber || "", refillPhone: t.refillPhone || "",
+      createdAt: t.createdAt, completedAt: t.completedAt || "",
+    }))
+  );
+};
+
 // ============ Panic Mode ============
 document.getElementById("panicBtn").onclick = () => {
   const tasks = currentTasks();
@@ -625,13 +668,213 @@ renderAll();
 // ============ Tabs (المهام / الإداريات) ============
 document.getElementById("tabTasksBtn").onclick = () => showPage("tasks");
 document.getElementById("tabManagerBtn").onclick = () => showPage("manager");
+document.getElementById("tabCategoryBtn").onclick = () => showPage("category");
 
 function showPage(page) {
   document.getElementById("tasksPage").style.display = page === "tasks" ? "" : "none";
   document.getElementById("managerPage").style.display = page === "manager" ? "" : "none";
+  document.getElementById("categoryPage").style.display = page === "category" ? "" : "none";
   document.getElementById("tabTasksBtn").classList.toggle("active", page === "tasks");
   document.getElementById("tabManagerBtn").classList.toggle("active", page === "manager");
+  document.getElementById("tabCategoryBtn").classList.toggle("active", page === "category");
   if (page === "manager") { managerView = { name: "grid" }; renderManager(); }
+  if (page === "category") renderCategoryPage();
+}
+
+// ============ Category (تقسيم الأصناف KPI حسب الكاتيجوري/الساب كاتيجوري) ============
+let categoryView = { name: "stock" }; // stock | stockDetail | sales | salesDetail
+
+function parseCategoryRows(rows) {
+  if (!rows.length) return [];
+  const headers = Object.keys(rows[0]);
+  const codeCol = findCol(headers, ["MaterialNumber", "Code", "كود"]);
+  const catCol = findCol(headers, ["category", "كاتيجوري"]);
+  const subCol = findCol(headers, ["sub category", "subcategory", "ساب كاتيجوري"]);
+  return rows
+    .map((r) => ({ code: normalizeCode(r[codeCol]), category: String(r[catCol] || "").trim(), subCategory: String(r[subCol] || "").trim() }))
+    .filter((r) => r.code && r.category);
+}
+
+function monthlySeriesForItems(items, monthsCount) {
+  const dates = items.map((s) => new Date(s.date)).filter((d) => !isNaN(d));
+  if (!dates.length) return [];
+  const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+  const months = [];
+  for (let i = monthsCount - 1; i >= 0; i--) {
+    const d = new Date(maxDate.getFullYear(), maxDate.getMonth() - i, 1);
+    months.push({ key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString("ar-EG", { month: "short", year: "numeric" }), qty: 0, money: 0 });
+  }
+  items.forEach((s) => {
+    const d = new Date(s.date);
+    if (isNaN(d)) return;
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    const m = months.find((mo) => mo.key === key);
+    if (m) { m.qty += s.qty || 0; m.money += s.netPrice || 0; }
+  });
+  return months;
+}
+
+function categoryCompute(mgr) {
+  if (!mgr.categoryFile) return null;
+  const catRows = mgr.categoryFile.rows;
+  const stockByCode = {};
+  (mgr.stock ? mgr.stock.items : []).forEach((s) => { stockByCode[s.code] = s; });
+  const salesItems = mgr.sales ? mgr.sales.items : [];
+  const rates = computeMonthlyRates(salesItems);
+
+  const groups = {};
+  catRows.forEach((r) => {
+    if (!groups[r.category]) groups[r.category] = [];
+    groups[r.category].push(r);
+  });
+
+  const catList = Object.keys(groups)
+    .map((name) => {
+      const rows = groups[name];
+      const total = rows.length;
+      const covered = rows.filter((r) => stockByCode[r.code] && stockByCode[r.code].balance > 0).length;
+      const pct = total ? (covered / total) * 100 : 0;
+      const rateSum = rows.reduce((sum, r) => sum + (rates[r.code] || 0), 0);
+      return { name, rows, total, covered, pct, rateSum };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return { catList, stockByCode, salesItems, rates };
+}
+
+function subGroupBreakdown(rows, stockByCode) {
+  const subs = {};
+  rows.forEach((r) => {
+    const key = r.subCategory || "(بدون ساب كاتيجوري)";
+    if (!subs[key]) subs[key] = [];
+    subs[key].push(r);
+  });
+  return Object.keys(subs)
+    .map((name) => {
+      const subRows = subs[name];
+      const total = subRows.length;
+      const covered = subRows.filter((r) => stockByCode[r.code] && stockByCode[r.code].balance > 0).length;
+      return { name, total, covered, pct: total ? (covered / total) * 100 : 0 };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function renderCategoryPage() {
+  const el = document.getElementById("categoryContainer");
+  const mgr = currentManager();
+  const data = categoryCompute(mgr);
+  el.innerHTML = `
+    <div class="section-label">Category</div>
+    <div class="mgr-list-item">
+      <div class="row2">ملف الأصناف بالكاتيجوري (كود + كاتيجوري + ساب كاتيجوري): ${mgr.categoryFile ? `محدّث ${new Date(mgr.categoryFile.updatedAt).toLocaleString("ar-EG")} (${mgr.categoryFile.rows.length} صف)` : "لسه ماترفعش"}</div>
+      <input type="file" id="categoryFileInput" accept=".xlsx,.xls,.csv" style="margin-top:6px;" />
+    </div>
+    <p style="font-size:12px; color:var(--muted);">بيستخدم نفس ملفي Stock وSales اللي مرفوعين في Stock Manager - مش محتاج يترفعوا تاني هنا.</p>
+    <p id="catStatus" style="font-size:13px; color:var(--muted);"></p>
+    <div class="urgency-row"><button id="catTabStock" style="flex:1;">Stock</button><button id="catTabSales" style="flex:1;">Sales</button></div>
+    <div id="catBody"></div>
+  `;
+  document.getElementById("categoryFileInput").onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById("catStatus");
+    statusEl.textContent = "جاري قراءة ملف الكاتيجوري...";
+    try {
+      const rows = await readExcelFile(file);
+      const parsed = parseCategoryRows(rows);
+      mgr.categoryFile = { rows: parsed, updatedAt: new Date().toISOString() };
+      saveStore();
+      renderCategoryPage();
+    } catch (err) {
+      statusEl.textContent = "حصل خطأ: " + err.message;
+    }
+  };
+  document.getElementById("catTabStock").className = categoryView.name.startsWith("stock") ? "sel-now" : "";
+  document.getElementById("catTabSales").className = categoryView.name.startsWith("sales") ? "sel-now" : "";
+  document.getElementById("catTabStock").onclick = () => { categoryView = { name: "stock" }; renderCategoryPage(); };
+  document.getElementById("catTabSales").onclick = () => { categoryView = { name: "sales" }; renderCategoryPage(); };
+
+  const body = document.getElementById("catBody");
+  if (!data) { body.innerHTML = `<p class="empty">ارفع ملف الكاتيجوري الأول عشان يظهر التحليل.</p>`; return; }
+
+  if (categoryView.name === "stock") {
+    body.innerHTML = data.catList
+      .map(
+        (c) => `
+      <div class="mgr-list-item" data-cat="${escapeHtml(c.name)}">
+        <div class="row1"><span>${escapeHtml(c.name)}</span><span>${c.pct.toFixed(0)}%</span></div>
+        <div class="row2">${c.total} صنف - ${c.covered} مرصود</div>
+      </div>`
+      )
+      .join("");
+    body.querySelectorAll("[data-cat]").forEach((row) => {
+      row.onclick = () => { categoryView = { name: "stockDetail", cat: row.dataset.cat }; renderCategoryPage(); };
+    });
+  } else if (categoryView.name === "stockDetail") {
+    const cat = data.catList.find((c) => c.name === categoryView.cat);
+    const subs = subGroupBreakdown(cat.rows, data.stockByCode);
+    body.innerHTML =
+      `<button class="mgr-back" id="catBackBtn">‹ رجوع لكل الكاتيجوريز</button><div class="section-label">${escapeHtml(cat.name)}</div>` +
+      subs.map((s) => `<div class="mgr-list-item"><div class="row1"><span>${escapeHtml(s.name)}</span><span>${s.pct.toFixed(0)}%</span></div><div class="row2">${s.total} صنف - ${s.covered} مرصود</div></div>`).join("");
+    document.getElementById("catBackBtn").onclick = () => { categoryView = { name: "stock" }; renderCategoryPage(); };
+  } else if (categoryView.name === "sales") {
+    body.innerHTML = data.catList
+      .map(
+        (c) => `
+      <div class="mgr-list-item" data-cat="${escapeHtml(c.name)}">
+        <div class="row1"><span>${escapeHtml(c.name)}</span></div>
+        <div class="row2">${c.covered} صنف برصيد - معدل بيع شهري إجمالي: ${c.rateSum.toFixed(1)}</div>
+      </div>`
+      )
+      .join("");
+    body.querySelectorAll("[data-cat]").forEach((row) => {
+      row.onclick = () => { categoryView = { name: "salesDetail", cat: row.dataset.cat }; renderCategoryPage(); };
+    });
+  } else if (categoryView.name === "salesDetail") {
+    const cat = data.catList.find((c) => c.name === categoryView.cat);
+    const codes = new Set(cat.rows.map((r) => r.code));
+    const relevantSales = data.salesItems.filter((s) => codes.has(s.code));
+    // شارت الساب كاتيجوري: مجموع كمية وفلوس آخر 3 شهور
+    const dates = relevantSales.map((s) => new Date(s.date)).filter((d) => !isNaN(d));
+    let subTotals = [];
+    if (dates.length) {
+      const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+      const cutoff = new Date(maxDate); cutoff.setMonth(cutoff.getMonth() - 3);
+      const codeToSub = {}; cat.rows.forEach((r) => { codeToSub[r.code] = r.subCategory || "(بدون)"; });
+      const totals = {};
+      relevantSales.forEach((s) => {
+        const d = new Date(s.date);
+        if (isNaN(d) || d.getTime() < cutoff.getTime()) return;
+        const sub = codeToSub[s.code];
+        if (!totals[sub]) totals[sub] = { name: sub, qty: 0, money: 0 };
+        totals[sub].qty += s.qty || 0;
+        totals[sub].money += s.netPrice || 0;
+      });
+      subTotals = Object.values(totals).sort((a, b) => b.money - a.money);
+    }
+    const catMonths = monthlySeriesForItems(relevantSales, 5);
+    const barsHtml = (items, valueKey, labelKey) => {
+      const max = Math.max(...items.map((i) => i[valueKey]), 1);
+      return `<div style="display:flex; align-items:flex-end; gap:8px; height:150px; padding:10px 0; overflow-x:auto;">${items
+        .map(
+          (i) => `
+        <div style="min-width:50px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;">
+          <div style="font-size:10px;">${Math.round(i[valueKey])}</div>
+          <div style="width:100%; background:linear-gradient(180deg, var(--turq), var(--navy-2)); border-radius:6px 6px 0 0; height:${Math.max((i[valueKey] / max) * 110, 2)}px;"></div>
+          <div style="font-size:9px; color:var(--muted); margin-top:4px; text-align:center;">${escapeHtml(String(i[labelKey]))}</div>
+        </div>`
+        )
+        .join("")}</div>`;
+    };
+    body.innerHTML = `
+      <button class="mgr-back" id="catBackBtn">‹ رجوع لكل الكاتيجوريز</button>
+      <div class="section-label">${escapeHtml(cat.name)} - مبيعات الساب كاتيجوري (كمية، آخر 3 شهور)</div>
+      ${subTotals.length ? barsHtml(subTotals, "qty", "name") : `<p class="empty">مفيش مبيعات كفاية.</p>`}
+      <div class="section-label">مبيعات ${escapeHtml(cat.name)} نفسها (فلوس، آخر 5 شهور)</div>
+      ${catMonths.length ? barsHtml(catMonths, "money", "label") : `<p class="empty">مفيش مبيعات كفاية.</p>`}
+    `;
+    document.getElementById("catBackBtn").onclick = () => { categoryView = { name: "sales" }; renderCategoryPage(); };
+  }
 }
 
 // ============ الإداريات (روابط / فروع / علاقات / عملاء عروض / مستشفيات / تعاميم / الملفات / تذكيرات) ============
@@ -642,9 +885,17 @@ function currentManager() {
     store.managerByProfile[store.currentProfileId] = {
       links: [], branches: [], contacts: [], offerClients: [],
       hospitals: [], hospitalDueEntries: [], circulars: [], files: [], reminders: [],
+      stock: null, prevStock: null, sales: null, specificCodes: [], specialFile: null, categoryFile: null,
     };
   }
-  return store.managerByProfile[store.currentProfileId];
+  const mgr = store.managerByProfile[store.currentProfileId];
+  if (mgr.stock === undefined) mgr.stock = null;
+  if (mgr.prevStock === undefined) mgr.prevStock = null;
+  if (mgr.sales === undefined) mgr.sales = null;
+  if (!mgr.specificCodes) mgr.specificCodes = [];
+  if (mgr.specialFile === undefined) mgr.specialFile = null;
+  if (mgr.categoryFile === undefined) mgr.categoryFile = null;
+  return mgr;
 }
 
 const SIMPLE_SECTIONS = {
@@ -707,6 +958,7 @@ function renderManager() {
   if (managerView.name === "hospitalDetail") return renderHospitalDetail(el, managerView.id);
   if (managerView.name === "circulars") return renderCirculars(el);
   if (managerView.name === "files") return renderFiles(el);
+  if (managerView.name === "stockManager") return renderStockManager(el);
 }
 
 const MANAGER_CARDS = [
@@ -718,6 +970,7 @@ const MANAGER_CARDS = [
   { key: "reminders", type: "simple", icon: "🔔", title: "التذكيرات" },
   { key: "circulars", type: "circulars", icon: "📋", title: "تعاميم" },
   { key: "files", type: "files", icon: "📁", title: "الملفات" },
+  { key: "stockManager", type: "stockManager", icon: "📦", title: "Stock Manager" },
 ];
 
 function renderManagerGrid(el) {
@@ -733,6 +986,7 @@ function renderManagerGrid(el) {
       else if (conf.type === "hospitals") managerView = { name: "hospitals" };
       else if (conf.type === "circulars") managerView = { name: "circulars" };
       else if (conf.type === "files") managerView = { name: "files" };
+      else if (conf.type === "stockManager") managerView = { name: "stockManager", tab: "urgent" };
       renderManager();
     };
   });
@@ -753,7 +1007,10 @@ function renderSimpleSection(el, key, filterText) {
     <button class="mgr-back" id="mgrBack">‹ رجوع</button>
     <div class="section-label">${conf.title}</div>
     <input class="mgr-search" id="mgrSearch" placeholder="بحث..." value="${escapeHtml(filterText || "")}" />
-    <button class="mgr-add-btn" id="mgrAddBtn">+ إضافة</button>
+    <div style="display:flex; gap:8px;">
+      <button class="mgr-add-btn" id="mgrAddBtn" style="flex:1;">+ إضافة</button>
+      <button class="mgr-add-btn" id="mgrExportBtn" style="flex:1;">📤 تصدير</button>
+    </div>
     <div id="mgrListWrap"></div>
   `;
   const listWrap = document.getElementById("mgrListWrap");
@@ -780,6 +1037,9 @@ function renderSimpleSection(el, key, filterText) {
   document.getElementById("mgrBack").onclick = backToGrid;
   document.getElementById("mgrSearch").oninput = (e) => renderSimpleSection(el, key, e.target.value);
   document.getElementById("mgrAddBtn").onclick = () => openSimpleAddSheet(key, el);
+  document.getElementById("mgrExportBtn").onclick = () => {
+    downloadCSV(key + ".csv", conf.fields.map((f) => f.key), filtered);
+  };
 }
 
 function openSimpleAddSheet(key, el) {
@@ -809,17 +1069,23 @@ function openSimpleAddSheet(key, el) {
 }
 
 // ---- مستحقات المستشفيات (مستشفى -> شهور/مستحقات) ----
-function renderHospitalsList(el) {
+function renderHospitalsList(el, filterText) {
   const mgr = currentManager();
+  const q = (filterText || "").trim().toLowerCase();
+  const filtered = q ? mgr.hospitals.filter((h) => (h.name || "").toLowerCase().includes(q) || (h.contractor || "").toLowerCase().includes(q)) : mgr.hospitals;
   el.innerHTML = `
     <button class="mgr-back" id="mgrBack">‹ رجوع</button>
     <div class="section-label">مستحقات المستشفيات</div>
-    <button class="mgr-add-btn" id="mgrAddHospBtn">+ إضافة مستشفى</button>
+    <input class="mgr-search" id="hospSearch" placeholder="بحث..." value="${escapeHtml(filterText || "")}" />
+    <div style="display:flex; gap:8px;">
+      <button class="mgr-add-btn" id="mgrAddHospBtn" style="flex:1;">+ إضافة مستشفى</button>
+      <button class="mgr-add-btn" id="exportHospBtn" style="flex:1;">📤 تصدير</button>
+    </div>
     <div id="hospListWrap"></div>
   `;
-  document.getElementById("hospListWrap").innerHTML = mgr.hospitals.length === 0
+  document.getElementById("hospListWrap").innerHTML = filtered.length === 0
     ? `<p class="empty">مفيش مستشفيات لسه.</p>`
-    : mgr.hospitals
+    : filtered
         .map(
           (h) => `
       <div class="mgr-list-item" data-id="${h.id}">
@@ -828,6 +1094,10 @@ function renderHospitalsList(el) {
       </div>`
         )
         .join("");
+  document.getElementById("hospSearch").oninput = (e) => renderHospitalsList(el, e.target.value);
+  document.getElementById("exportHospBtn").onclick = () => {
+    downloadCSV("hospitals.csv", ["name", "contractor"], filtered);
+  };
   document.querySelectorAll("#hospListWrap [data-id]").forEach((row) => {
     row.onclick = (e) => {
       if (e.target.dataset.del) return;
@@ -879,7 +1149,10 @@ function renderHospitalDetail(el, hospId) {
   el.innerHTML = `
     <button class="mgr-back" id="mgrBack">‹ رجوع لكل المستشفيات</button>
     <div class="section-label">${escapeHtml(hosp.name)} - ${escapeHtml(hosp.contractor || "")}</div>
-    <button class="mgr-add-btn" id="addMonthBtn">+ إضافة شهر</button>
+    <div style="display:flex; gap:8px;">
+      <button class="mgr-add-btn" id="addMonthBtn" style="flex:1;">+ إضافة شهر</button>
+      <button class="mgr-add-btn" id="exportMonthsBtn" style="flex:1;">📤 تصدير</button>
+    </div>
     <div id="monthsWrap"></div>
   `;
   document.getElementById("monthsWrap").innerHTML = entries.length === 0
@@ -916,6 +1189,9 @@ function renderHospitalDetail(el, hospId) {
     };
   });
   document.getElementById("mgrBack").onclick = () => { managerView = { name: "hospitals" }; renderManager(); };
+  document.getElementById("exportMonthsBtn").onclick = () => {
+    downloadCSV("hospital-months.csv", ["month", "amount", "received"], entries.map((e2) => ({ month: e2.month, amount: e2.amount, received: e2.received ? "استلم" : "لسه" })));
+  };
   document.getElementById("addMonthBtn").onclick = () => {
     const sheetRoot = document.getElementById("sheetRoot");
     sheetRoot.innerHTML = `
@@ -946,15 +1222,25 @@ function renderHospitalDetail(el, hospId) {
 }
 
 // ---- تعاميم (نص + مرفق صورة/ملف كـ dataURL) ----
-function renderCirculars(el) {
+function renderCirculars(el, filterText) {
   const mgr = currentManager();
+  const q = (filterText || "").trim().toLowerCase();
   el.innerHTML = `
     <button class="mgr-back" id="mgrBack">‹ رجوع</button>
     <div class="section-label">تعاميم</div>
-    <button class="mgr-add-btn" id="addCircularBtn">+ إضافة تعميم</button>
+    <input class="mgr-search" id="circSearch" placeholder="بحث في النص..." value="${escapeHtml(filterText || "")}" />
+    <div style="display:flex; gap:8px;">
+      <button class="mgr-add-btn" id="addCircularBtn" style="flex:1;">+ إضافة تعميم</button>
+      <button class="mgr-add-btn" id="exportCircBtn" style="flex:1;">📤 تصدير</button>
+    </div>
     <div id="circWrap"></div>
   `;
-  const sorted = [...mgr.circulars].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  let sorted = [...mgr.circulars].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  if (q) sorted = sorted.filter((c) => (c.text || "").toLowerCase().includes(q));
+  document.getElementById("circSearch").oninput = (e) => renderCirculars(el, e.target.value);
+  document.getElementById("exportCircBtn").onclick = () => {
+    downloadCSV("circulars.csv", ["type", "text", "createdAt"], sorted.map((c) => ({ type: c.type === "insurance" ? "تأمين" : "إداري", text: c.text, createdAt: c.createdAt })));
+  };
   document.getElementById("circWrap").innerHTML = sorted.length === 0
     ? `<p class="empty">مفيش تعاميم لسه.</p>`
     : sorted
@@ -1023,15 +1309,25 @@ function renderCirculars(el) {
 }
 
 // ---- الملفات (رفع ملف باسم + تنزيل) ----
-function renderFiles(el) {
+function renderFiles(el, filterText) {
   const mgr = currentManager();
+  const q = (filterText || "").trim().toLowerCase();
   el.innerHTML = `
     <button class="mgr-back" id="mgrBack">‹ رجوع</button>
     <div class="section-label">الملفات</div>
-    <button class="mgr-add-btn" id="addFileBtn">+ إضافة ملف</button>
+    <input class="mgr-search" id="filesSearch" placeholder="بحث بالاسم..." value="${escapeHtml(filterText || "")}" />
+    <div style="display:flex; gap:8px;">
+      <button class="mgr-add-btn" id="addFileBtn" style="flex:1;">+ إضافة ملف</button>
+      <button class="mgr-add-btn" id="exportFilesBtn" style="flex:1;">📤 تصدير القايمة</button>
+    </div>
     <div id="filesWrap"></div>
   `;
-  const sorted = [...mgr.files].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  let sorted = [...mgr.files].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  if (q) sorted = sorted.filter((f) => (f.name || "").toLowerCase().includes(q));
+  document.getElementById("filesSearch").oninput = (e) => renderFiles(el, e.target.value);
+  document.getElementById("exportFilesBtn").onclick = () => {
+    downloadCSV("files-list.csv", ["name", "originalName", "createdAt"], sorted);
+  };
   document.getElementById("filesWrap").innerHTML = sorted.length === 0
     ? `<p class="empty">مفيش ملفات لسه.</p>`
     : sorted
@@ -1082,6 +1378,342 @@ function renderFiles(el) {
       };
       reader.readAsDataURL(fileInput.files[0]);
     };
+  };
+}
+
+// ============ Stock Manager (الجرد / النواقص) ============
+function normalizeCode(code) {
+  const s = String(code == null ? "" : code).trim();
+  const stripped = s.replace(/^0+/, "");
+  return stripped || (s ? "0" : "");
+}
+
+function findCol(headers, candidates) {
+  for (const cand of candidates) {
+    const exact = headers.find((h) => h.toLowerCase().trim() === cand.toLowerCase());
+    if (exact) return exact;
+  }
+  for (const cand of candidates) {
+    const partial = headers.find((h) => h.toLowerCase().includes(cand.toLowerCase()));
+    if (partial) return partial;
+  }
+  return null;
+}
+
+function readExcelFile(file) {
+  return new Promise((resolve, reject) => {
+    if (typeof XLSX === "undefined") { reject(new Error("مكتبة قراءة الإكسل لسه محملتش - محتاج إنترنت أول مرة تستخدم Stock Manager")); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+        resolve(rows);
+      } catch (err) { reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function parseStockRows(rows) {
+  if (!rows.length) return [];
+  const headers = Object.keys(rows[0]);
+  const codeCol = findCol(headers, ["MaterialNumber", "Code", "كود", "materialnumber"]);
+  const nameCol = findCol(headers, ["name", "اسم", "Material name"]);
+  const balCol = findCol(headers, ["UnRestrictedStock", "Stock", "Balance", "رصيد"]);
+  return rows
+    .map((r) => ({
+      code: normalizeCode(r[codeCol]),
+      name: nameCol ? r[nameCol] : "",
+      balance: parseFloat(r[balCol]) || 0,
+    }))
+    .filter((r) => r.code);
+}
+
+function parseSalesRows(rows) {
+  if (!rows.length) return [];
+  const headers = Object.keys(rows[0]);
+  const codeCol = findCol(headers, ["MaterialNumber", "Code", "كود"]);
+  const nameCol = findCol(headers, ["name", "اسم"]);
+  const qtyCol = findCol(headers, ["Quantity", "qty", "كمية"]);
+  const priceCol = findCol(headers, ["item net price", "netprice", "net price"]);
+  const discCol = findCol(headers, ["discount", "خصم"]);
+  const invTypeCol = findCol(headers, ["Invoice Type", "invoicetype"]);
+  const dateCol = findCol(headers, ["date", "تاريخ"]);
+  return rows.map((r) => ({
+    code: normalizeCode(r[codeCol]),
+    name: nameCol ? r[nameCol] : "",
+    qty: parseFloat(r[qtyCol]) || 0,
+    netPrice: priceCol ? parseFloat(r[priceCol]) || 0 : 0,
+    discount: discCol ? parseFloat(r[discCol]) || 0 : 0,
+    invoiceType: invTypeCol ? String(r[invTypeCol] || "") : "",
+    date: dateCol ? r[dateCol] : "",
+  }));
+}
+
+function computeMonthlyRates(salesItems) {
+  const dates = salesItems.map((s) => new Date(s.date)).filter((d) => !isNaN(d));
+  if (!dates.length) return {};
+  const maxTime = Math.max(...dates.map((d) => d.getTime()));
+  const cutoff = new Date(maxTime);
+  cutoff.setMonth(cutoff.getMonth() - 3);
+  const sums = {};
+  for (const s of salesItems) {
+    const d = new Date(s.date);
+    if (isNaN(d) || d.getTime() < cutoff.getTime()) continue;
+    sums[s.code] = (sums[s.code] || 0) + s.qty;
+  }
+  const rates = {};
+  for (const code in sums) rates[code] = sums[code] / 3;
+  return rates;
+}
+
+function parseSpecialRows(rows) {
+  if (!rows.length) return [];
+  const headers = Object.keys(rows[0]);
+  const codeCol = findCol(headers, ["MaterialNumber", "Code", "كود", "materialnumber"]);
+  return rows.map((r) => normalizeCode(r[codeCol])).filter(Boolean);
+}
+
+function computeSpecialSalesByMonth(salesItems, specialCodesSet) {
+  const relevant = salesItems.filter((s) => specialCodesSet.has(s.code));
+  const dates = relevant.map((s) => new Date(s.date)).filter((d) => !isNaN(d));
+  if (!dates.length) return [];
+  const maxTime = Math.max(...dates.map((d) => d.getTime()));
+  const maxDate = new Date(maxTime);
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(maxDate.getFullYear(), maxDate.getMonth() - i, 1);
+    months.push({ key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString("ar-EG", { month: "short", year: "numeric" }), total: 0 });
+  }
+  relevant.forEach((s) => {
+    const d = new Date(s.date);
+    if (isNaN(d)) return;
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    const m = months.find((mo) => mo.key === key);
+    if (m) m.total += s.netPrice || 0;
+  });
+  return months;
+}
+
+function stockManagerCompute(mgr) {
+  const stockItems = mgr.stock ? mgr.stock.items : [];
+  const salesItems = mgr.sales ? mgr.sales.items : [];
+  const stockByCode = {};
+  stockItems.forEach((s) => { stockByCode[s.code] = s; });
+  const rates = computeMonthlyRates(salesItems);
+
+  const negative = stockItems.filter((s) => s.balance < 0);
+
+  const urgent = stockItems.filter((s) => {
+    const rate = rates[s.code] || 0;
+    return rate > 0 && s.balance < rate / 4;
+  });
+
+  const lost = stockItems
+    .filter((s) => s.balance <= 0 && (rates[s.code] || 0) > 2)
+    .sort((a, b) => b.balance - a.balance);
+
+  const specialCodesList = mgr.specialFile ? mgr.specialFile.codes : [];
+  const specialCodesSet = new Set(specialCodesList);
+  const special = specialCodesList
+    .map((code) => {
+      const st = stockByCode[code];
+      return st ? { code, name: st.name, balance: st.balance } : null;
+    })
+    .filter((i) => i && i.balance !== 0);
+
+  const specialSalesByMonth = computeSpecialSalesByMonth(salesItems, specialCodesSet);
+
+  const specific = mgr.specificCodes.map((sc) => {
+    const st = stockByCode[sc.code];
+    return { id: sc.id, code: sc.code, name: st ? st.name : "(مش موجود في ملف Stock الحالي)", balance: st ? st.balance : "" };
+  });
+
+  return { negative, urgent, lost, special, specialSales: specialSalesByMonth, specific };
+}
+
+const STOCK_TABS = [
+  { key: "negative", label: "سالبة" },
+  { key: "urgent", label: "Urgent Order" },
+  { key: "lost", label: "Lost Sales" },
+  { key: "special", label: "Special" },
+  { key: "specialSales", label: "📊 Special Sales" },
+  { key: "specific", label: "جرد" },
+];
+
+function renderStockManager(el) {
+  const mgr = currentManager();
+  const tab = managerView.tab || "urgent";
+  const data = stockManagerCompute(mgr);
+  el.innerHTML = `
+    <button class="mgr-back" id="mgrBack">‹ رجوع</button>
+    <div class="section-label">Stock Manager</div>
+    <div class="mgr-list-item">
+      <div class="row2">ملف Stock: ${mgr.stock ? `محدّث ${new Date(mgr.stock.updatedAt).toLocaleString("ar-EG")} (${mgr.stock.items.length} صنف)` : "لسه ماترفعش"}</div>
+      <input type="file" id="stockFileInput" accept=".xlsx,.xls,.csv" style="margin-top:6px;" />
+    </div>
+    <div class="mgr-list-item">
+      <div class="row2">ملف Sales: ${mgr.sales ? `محدّث ${new Date(mgr.sales.updatedAt).toLocaleString("ar-EG")} (${mgr.sales.items.length} صف)` : "لسه ماترفعش"}</div>
+      <input type="file" id="salesFileInput" accept=".xlsx,.xls,.csv" style="margin-top:6px;" />
+    </div>
+    <div class="mgr-list-item">
+      <div class="row2">ملف Special (كود بس): ${mgr.specialFile ? `محدّث ${new Date(mgr.specialFile.updatedAt).toLocaleString("ar-EG")} (${mgr.specialFile.codes.length} كود)` : "لسه ماترفعش"}</div>
+      <input type="file" id="specialFileInput" accept=".xlsx,.xls,.csv" style="margin-top:6px;" />
+    </div>
+    <p id="stockStatus" style="font-size:13px; color:var(--muted);"></p>
+    <div class="urgency-row" id="stockTabsRow" style="flex-wrap:wrap;"></div>
+    <input class="mgr-search" id="stockSearch" placeholder="بحث بالكود أو الاسم..." />
+    <div id="stockResultWrap" style="margin-top:12px;"></div>
+  `;
+  document.getElementById("mgrBack").onclick = backToGrid;
+
+  document.getElementById("stockFileInput").onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById("stockStatus");
+    statusEl.textContent = "جاري قراءة ملف Stock...";
+    try {
+      const rows = await readExcelFile(file);
+      const items = parseStockRows(rows);
+      if (mgr.stock) mgr.prevStock = mgr.stock;
+      mgr.stock = { items, updatedAt: new Date().toISOString() };
+      saveStore();
+      renderStockManager(el);
+    } catch (err) {
+      statusEl.textContent = "حصل خطأ في قراءة الملف: " + err.message;
+    }
+  };
+  document.getElementById("salesFileInput").onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById("stockStatus");
+    statusEl.textContent = "جاري قراءة ملف Sales...";
+    try {
+      const rows = await readExcelFile(file);
+      const items = parseSalesRows(rows);
+      mgr.sales = { items, updatedAt: new Date().toISOString() };
+      saveStore();
+      renderStockManager(el);
+    } catch (err) {
+      statusEl.textContent = "حصل خطأ في قراءة الملف: " + err.message;
+    }
+  };
+  document.getElementById("specialFileInput").onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const statusEl = document.getElementById("stockStatus");
+    statusEl.textContent = "جاري قراءة ملف Special...";
+    try {
+      const rows = await readExcelFile(file);
+      const codes = parseSpecialRows(rows);
+      mgr.specialFile = { codes, updatedAt: new Date().toISOString() };
+      saveStore();
+      renderStockManager(el);
+    } catch (err) {
+      statusEl.textContent = "حصل خطأ في قراءة الملف: " + err.message;
+    }
+  };
+
+  const tabsRow = document.getElementById("stockTabsRow");
+  tabsRow.innerHTML = STOCK_TABS.map(
+    (t) => `<button data-tab="${t.key}" class="${t.key === tab ? "sel-now" : ""}" style="margin:2px;">${t.label} (${data[t.key].length})</button>`
+  ).join("");
+  tabsRow.querySelectorAll("[data-tab]").forEach((btn) => {
+    btn.onclick = () => { managerView.tab = btn.dataset.tab; renderStockManager(el); };
+  });
+
+  const searchBox = document.getElementById("stockSearch");
+  searchBox.oninput = () => renderStockTabContent(el, mgr, tab, data, searchBox.value);
+  if (tab === "specialSales") searchBox.style.display = "none";
+  renderStockTabContent(el, mgr, tab, data, "");
+}
+
+function renderStockTabContent(el, mgr, tab, data, q) {
+  const resultWrap = document.getElementById("stockResultWrap");
+  q = (q || "").trim().toLowerCase();
+  const filterList = (list) => (q ? list.filter((i) => String(i.code).toLowerCase().includes(q) || String(i.name || "").toLowerCase().includes(q)) : list);
+
+  if (tab === "specialSales") {
+    const months = data.specialSales;
+    if (months.length === 0) {
+      resultWrap.innerHTML = `<p class="empty">محتاج ترفع ملف Special وملف Sales الأول عشان يظهر الجراف.</p>`;
+      return;
+    }
+    const max = Math.max(...months.map((m) => m.total), 1);
+    resultWrap.innerHTML = `
+      <button class="mgr-add-btn" id="exportSpecialSalesBtn">📤 تصدير</button>
+      <div style="display:flex; align-items:flex-end; gap:8px; height:180px; padding:10px 0;">
+        ${months
+          .map(
+            (m) => `
+          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;">
+            <div style="font-size:11px; margin-bottom:4px;">${Math.round(m.total)}</div>
+            <div style="width:100%; background:linear-gradient(180deg, var(--turq), var(--navy-2)); border-radius:6px 6px 0 0; height:${Math.max((m.total / max) * 140, 2)}px;"></div>
+            <div style="font-size:10px; color:var(--muted); margin-top:4px;">${m.label}</div>
+          </div>`
+          )
+          .join("")}
+      </div>`;
+    document.getElementById("exportSpecialSalesBtn").onclick = () => {
+      downloadCSV("special-sales.csv", ["label", "total"], months.map((m) => ({ label: m.label, total: m.total.toFixed(2) })));
+    };
+    return;
+  }
+
+  if (tab === "specific") {
+    const list = filterList(data.specific);
+    resultWrap.innerHTML =
+      `<div style="display:flex; gap:8px;"><button class="mgr-add-btn" id="addSpecificBtn" style="flex:1;">+ إضافة كود</button><button class="mgr-add-btn" id="exportSpecificBtn" style="flex:1;">📤 تصدير</button></div>` +
+      (list.length === 0
+        ? `<p class="empty">مفيش أكواد مضافة لسه.</p>`
+        : list
+            .map(
+              (i) => `
+        <div class="mgr-list-item">
+          <div class="row1"><span>${escapeHtml(i.code)} - ${escapeHtml(String(i.name))}</span><span class="del-x" data-delspec="${i.id}">✕</span></div>
+          <div class="row2">الرصيد: ${i.balance}</div>
+        </div>`
+            )
+            .join(""));
+    document.getElementById("addSpecificBtn").onclick = () => {
+      const code = prompt("اكتب كود الصنف:");
+      if (!code || !code.trim()) return;
+      mgr.specificCodes.push({ id: uid(), code: normalizeCode(code) });
+      saveStore();
+      renderStockManager(el);
+    };
+    document.getElementById("exportSpecificBtn").onclick = () => {
+      downloadCSV("specific.csv", ["code", "name", "balance"], list);
+    };
+    resultWrap.querySelectorAll("[data-delspec]").forEach((btn) => {
+      btn.onclick = () => {
+        mgr.specificCodes = mgr.specificCodes.filter((c) => c.id !== btn.dataset.delspec);
+        saveStore();
+        renderStockManager(el);
+      };
+    });
+    return;
+  }
+
+  const list = filterList(data[tab]);
+  resultWrap.innerHTML =
+    `<button class="mgr-add-btn" id="exportTabBtn">📤 تصدير</button>` +
+    (list.length === 0
+      ? `<p class="empty">مفيش أصناف في القايمة دي دلوقتي.</p>`
+      : list
+          .map(
+            (i) => `
+      <div class="mgr-list-item">
+        <div class="row1"><span>${escapeHtml(String(i.code))} - ${escapeHtml(String(i.name || ""))}</span></div>
+        <div class="row2">الرصيد: ${i.balance}</div>
+      </div>`
+          )
+          .join(""));
+  document.getElementById("exportTabBtn").onclick = () => {
+    downloadCSV(tab + ".csv", ["code", "name", "balance"], list);
   };
 }
 
