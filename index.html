@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<title>Focus (أوفلاين)</title>
+<link rel="manifest" href="./manifest.json" />
+<meta name="theme-color" content="#0B2545" />
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<style>
+  :root {
+    --navy: #0B2545;
+    --navy-2: #12395F;
+    --turq: #17C3B2;
+    --amber: #F2A93B;
+    --line: #E3E9F0;
+    --muted: #64748B;
+    --bg: #F5F7FA;
+    --red: #B5473A;
+    --green-ok: #1E7A46;
+    --yellow-ok: #C9581E;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: 'Tahoma', 'Segoe UI', sans-serif; background: var(--bg);
+    color: var(--navy); padding-bottom: 90px; -webkit-tap-highlight-color: transparent;
+  }
+  .top-bar {
+    background: linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 100%);
+    color: #fff; padding: 16px 18px 20px; display: flex; justify-content: space-between; align-items: center;
+  }
+  .top-bar h1 { font-size: 20px; margin: 0; font-weight: 800; }
+  .profile-chip {
+    background: rgba(255,255,255,.15); border: none; color: #fff; padding: 7px 14px;
+    border-radius: 999px; font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .container { padding: 16px; max-width: 480px; margin: 0 auto; }
+  .section-label { font-size: 12px; font-weight: 700; color: var(--muted); margin: 18px 0 8px; }
+  .active-card {
+    background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px;
+    box-shadow: 0 2px 12px rgba(11,37,69,.06);
+  }
+  .active-card .empty-msg { text-align: center; color: var(--muted); padding: 18px 0; font-size: 14px; }
+  .active-note { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .active-meta { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .active-actions { display: flex; gap: 10px; }
+  .active-actions button {
+    flex: 1; padding: 10px; border-radius: 10px; border: 1.5px solid var(--line);
+    background: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
+  }
+  .btn-park { color: var(--yellow-ok); border-color: var(--yellow-ok) !important; }
+  .btn-done { color: var(--green-ok); border-color: var(--green-ok) !important; }
+
+  .task-row {
+    display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--line);
+    border-radius: 12px; padding: 12px; margin-bottom: 8px; cursor: pointer;
+  }
+  .task-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .task-note { flex: 1; font-size: 14px; font-weight: 600; }
+  .task-sub { font-size: 11px; color: var(--muted); }
+  .empty { text-align: center; color: var(--muted); font-size: 13px; padding: 18px 0; }
+
+  .fab-row {
+    position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--line);
+    display: flex; justify-content: center; padding: 10px 0; box-shadow: 0 -2px 10px rgba(11,37,69,.06);
+  }
+  .fab {
+    width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--turq), var(--navy-2));
+    color: #fff; font-size: 28px; border: none; box-shadow: 0 4px 14px rgba(23,195,178,.4); cursor: pointer;
+  }
+  .panic-btn {
+    position: fixed; bottom: 14px; left: 16px; background: #fff; border: 1.5px solid var(--red); color: var(--red);
+    border-radius: 999px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+
+  .sheet-overlay {
+    position: fixed; inset: 0; background: rgba(11,37,69,.4); display: flex; align-items: flex-end; z-index: 50;
+  }
+  .sheet {
+    background: #fff; width: 100%; border-radius: 20px 20px 0 0; padding: 18px; max-height: 85vh; overflow-y: auto;
+  }
+  .sheet h3 { margin: 0 0 12px; font-size: 16px; }
+  .sheet textarea, .sheet input {
+    width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 10px; font-size: 14px;
+    margin-bottom: 10px; font-family: inherit;
+  }
+  .urgency-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .urgency-row button {
+    flex: 1; padding: 9px; border-radius: 10px; border: 1.5px solid var(--line); background: #fff;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+  }
+  .urgency-row button.sel-now { background: #B5473A1a; border-color: var(--red); color: var(--red); }
+  .urgency-row button.sel-next { background: #C9581E1a; border-color: var(--yellow-ok); color: var(--yellow-ok); }
+  .urgency-row button.sel-later { background: #1E7A461a; border-color: var(--green-ok); color: var(--green-ok); }
+
+  .refill-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; cursor: pointer; }
+  .refill-circle { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--muted); }
+  .refill-circle.on { background: var(--turq); border-color: var(--turq); }
+  .refill-fields { display: none; }
+  .refill-fields.show { display: block; }
+
+  .sheet-btn {
+    width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--navy-2); color: #fff;
+    font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 4px;
+  }
+  .cancel-btn { background: none; color: var(--muted); font-weight: 600; border: none; padding: 10px; width: 100%; cursor: pointer; }
+
+  .profile-list-item {
+    display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1.5px solid var(--line);
+    border-radius: 10px; margin-bottom: 8px; cursor: pointer; font-weight: 700;
+  }
+  .profile-list-item.current { border-color: var(--turq); background: #17C3B21a; }
+  .del-x { color: var(--red); font-size: 18px; padding: 4px 8px; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>Focus</h1>
+  <button class="profile-chip" id="profileChip">👤 ...</button>
+</div>
+
+<div class="container">
+  <div class="section-label">التركيز الحالي</div>
+  <div class="active-card" id="activeCard"></div>
+
+  <div id="tasksSection">
+    <div class="section-label">المهام</div>
+    <div id="tasksList"></div>
+  </div>
+
+  <div id="parkSection">
+    <div class="section-label">Park</div>
+    <div id="parkList"></div>
+  </div>
+
+  <div id="doneSection">
+    <div class="section-label">خلصت النهاردة</div>
+    <div id="doneList"></div>
+  </div>
+</div>
+
+<button class="panic-btn" id="panicBtn">⚡ Panic Mode</button>
+<div class="fab-row"><button class="fab" id="addBtn">+</button></div>
+
+<div id="sheetRoot"></div>
+
+<script>
+// ============ التخزين المحلي (كل حاجة هنا جوه الجهاز بس - مفيش سيرفر خالص) ============
+const STORE_KEY = "focus_offline_v1";
+
+function loadStore() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return { profiles: [], currentProfileId: null, tasksByProfile: {} };
+}
+function saveStore() { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
+
+let store = loadStore();
+
+function currentTasks() {
+  if (!store.currentProfileId) return [];
+  if (!store.tasksByProfile[store.currentProfileId]) store.tasksByProfile[store.currentProfileId] = [];
+  return store.tasksByProfile[store.currentProfileId];
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+// ============ البروفايلات (تفرقة بسيطة بين اللي بيستخدموا نفس الجهاز - من غير باسورد حقيقي) ============
+function ensureProfile() {
+  if (store.profiles.length === 0) {
+    const name = prompt("اسمك إيه؟ (عشان لو حد تاني استخدم نفس الجهاز، مهامكم متتلخبطش)") || "مستخدم";
+    const p = { id: uid(), name };
+    store.profiles.push(p);
+    store.currentProfileId = p.id;
+    saveStore();
+  }
+  if (!store.currentProfileId) store.currentProfileId = store.profiles[0].id;
+}
+ensureProfile();
+
+function currentProfileName() {
+  const p = store.profiles.find((x) => x.id === store.currentProfileId);
+  return p ? p.name : "؟";
+}
+
+document.getElementById("profileChip").onclick = openProfileSheet;
+
+function openProfileSheet() {
+  const sheetRoot = document.getElementById("sheetRoot");
+  sheetRoot.innerHTML = `
+    <div class="sheet-overlay" id="overlay">
+      <div class="sheet">
+        <h3>مين بيستخدم الجهاز دلوقتي؟</h3>
+        <div id="profileItems"></div>
+        <input type="text" id="newProfileName" placeholder="إضافة اسم جديد" />
+        <button class="sheet-btn" id="addProfileBtn">إضافة</button>
+        <button class="cancel-btn" id="closeProfileSheet">إغلاق</button>
+      </div>
+    </div>`;
+  const itemsEl = document.getElementById("profileItems");
+  itemsEl.innerHTML = store.profiles
+    .map(
+      (p) => `
+    <div class="profile-list-item ${p.id === store.currentProfileId ? "current" : ""}" data-pid="${p.id}">
+      <span>${escapeHtml(p.name)}</span>
+      ${store.profiles.length > 1 ? `<span class="del-x" data-del="${p.id}">✕</span>` : ""}
+    </div>`
+    )
+    .join("");
+  itemsEl.querySelectorAll("[data-pid]").forEach((el) => {
+    el.onclick = (e) => {
+      if (e.target.dataset.del) return;
+      store.currentProfileId = el.dataset.pid;
+      saveStore();
+      closeSheet();
+      renderAll();
+    };
+  });
+  itemsEl.querySelectorAll("[data-del]").forEach((el) => {
+    el.onclick = (e) => {
+      e.stopPropagation();
+      if (!confirm("متأكد؟ هتتمسح مهام الشخص ده من الجهاز ده.")) return;
+      const pid = el.dataset.del;
+      store.profiles = store.profiles.filter((p) => p.id !== pid);
+      delete store.tasksByProfile[pid];
+      if (store.currentProfileId === pid) store.currentProfileId = store.profiles[0]?.id || null;
+      saveStore();
+      openProfileSheet();
+      renderAll();
+    };
+  });
+  document.getElementById("addProfileBtn").onclick = () => {
+    const name = document.getElementById("newProfileName").value.trim();
+    if (!name) return;
+    const p = { id: uid(), name };
+    store.profiles.push(p);
+    store.currentProfileId = p.id;
+    saveStore();
+    closeSheet();
+    renderAll();
+  };
+  document.getElementById("closeProfileSheet").onclick = closeSheet;
+  document.getElementById("overlay").onclick = (e) => {
+    if (e.target.id === "overlay") closeSheet();
+  };
+}
+
+function closeSheet() { document.getElementById("sheetRoot").innerHTML = ""; }
+function escapeHtml(s) {
+  return String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// ============ منطق المهام ============
+const URGENCY_META = {
+  now: { label: "🔴 NOW", color: "#B5473A" },
+  next: { label: "🟠 NEXT", color: "#C9581E" },
+  later: { label: "🟢 LATER", color: "#1E7A46" },
+};
+
+function parkColor(parkedAt) {
+  const mins = (Date.now() - new Date(parkedAt).getTime()) / 60000;
+  if (mins < 30) return "#1E7A46";
+  if (mins < 60) return "#C9581E";
+  return "#B5473A";
+}
+
+function getActiveTask() { return currentTasks().find((t) => t.status === "active") || null; }
+
+function renderAll() {
+  document.getElementById("profileChip").textContent = "👤 " + currentProfileName();
+  renderActive();
+  renderLists();
+}
+
+function renderActive() {
+  const t = getActiveTask();
+  const el = document.getElementById("activeCard");
+  if (!t) {
+    el.innerHTML = `<div class="empty-msg">أنت clear 🎯<br/>مفيش مهمة شغالة دلوقتي</div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div class="active-note">${escapeHtml(t.note)}</div>
+    <div class="active-meta">${URGENCY_META[t.urgency].label}${t.refillEnabled ? " · 💊 Refill" : ""}</div>
+    <div class="active-actions">
+      <button class="btn-park" id="parkActiveBtn">⏸ Park</button>
+      <button class="btn-done" id="doneActiveBtn">✅ Done</button>
+    </div>
+  `;
+  document.getElementById("parkActiveBtn").onclick = () => {
+    t.status = "park";
+    t.parkedAt = new Date().toISOString();
+    saveStore();
+    renderAll();
+  };
+  document.getElementById("doneActiveBtn").onclick = () => {
+    t.status = "done";
+    t.completedAt = new Date().toISOString();
+    saveStore();
+    playDoneSound();
+    renderAll();
+  };
+}
+
+function renderLists() {
+  const tasks = currentTasks();
+  const today = new Date().toDateString();
+
+  const openTasks = tasks.filter((t) => t.status === "open");
+  const parked = tasks.filter((t) => t.status === "park");
+  const doneToday = tasks.filter((t) => t.status === "done" && new Date(t.completedAt).toDateString() === today);
+
+  const order = { now: 0, next: 1, later: 2 };
+  openTasks.sort((a, b) => order[a.urgency] - order[b.urgency]);
+
+  document.getElementById("tasksList").innerHTML =
+    openTasks.length === 0
+      ? `<p class="empty">مفيش مهام لسه.</p>`
+      : openTasks
+          .map(
+            (t) => `
+    <div class="task-row" data-id="${t.id}" data-action="focus">
+      <span class="task-dot" style="background:${URGENCY_META[t.urgency].color}"></span>
+      <div style="flex:1">
+        <div class="task-note">${escapeHtml(t.note)}</div>
+        <div class="task-sub">${URGENCY_META[t.urgency].label}${t.refillEnabled ? " · 💊" : ""}</div>
+      </div>
+    </div>`
+          )
+          .join("");
+
+  document.getElementById("parkList").innerHTML =
+    parked.length === 0
+      ? `<p class="empty">مفيش حاجة في Park.</p>`
+      : parked
+          .map(
+            (t) => `
+    <div class="task-row" data-id="${t.id}" data-action="unpark">
+      <span class="task-dot" style="background:${parkColor(t.parkedAt)}"></span>
+      <div style="flex:1">
+        <div class="task-note">⏸️ ${escapeHtml(t.note)}</div>
+        <div class="task-sub">${URGENCY_META[t.urgency].label}${t.refillEnabled ? " · 💊" : ""}</div>
+      </div>
+    </div>`
+          )
+          .join("");
+
+  document.getElementById("doneList").innerHTML =
+    doneToday.length === 0
+      ? `<p class="empty">لسه مفيش حاجة خلصت النهاردة.</p>`
+      : `<p class="section-label" style="margin-top:0">عدد المهام المنجزة: ${doneToday.length}</p>` +
+        doneToday
+          .map((t) => `<div class="task-row" style="opacity:.65"><div class="task-note" style="text-decoration:line-through">${escapeHtml(t.note)}</div></div>`)
+          .join("");
+
+  document.querySelectorAll("[data-action='focus']").forEach((el) => {
+    el.onclick = () => setActiveFromOpen(el.dataset.id);
+  });
+  document.querySelectorAll("[data-action='unpark']").forEach((el) => {
+    el.onclick = () => unparkTask(el.dataset.id);
+  });
+}
+
+function setActiveFromOpen(id) {
+  const tasks = currentTasks();
+  const active = getActiveTask();
+  if (active) {
+    if (!confirm("فيه مهمة شغالة دلوقتي. تحب تعمل Park للمهمة الحالية وتفتح المهمة دي؟")) return;
+    active.status = "park";
+    active.parkedAt = new Date().toISOString();
+  }
+  const t = tasks.find((x) => x.id === id);
+  t.status = "active";
+  saveStore();
+  renderAll();
+}
+
+function unparkTask(id) {
+  const tasks = currentTasks();
+  const active = getActiveTask();
+  const t = tasks.find((x) => x.id === id);
+  if (active) {
+    if (!confirm("فيه مهمة شغالة دلوقتي. تحب تعمل Park للمهمة الحالية وترجّع دي بدل منها؟")) return;
+    active.status = "park";
+    active.parkedAt = new Date().toISOString();
+  }
+  t.status = "active";
+  t.parkedAt = null;
+  saveStore();
+  renderAll();
+}
+
+function playDoneSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g);
+    g.connect(ctx.destination);
+    o.frequency.value = 880;
+    g.gain.setValueAtTime(0.15, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    o.start();
+    o.stop(ctx.currentTime + 0.4);
+  } catch (e) {}
+}
+
+// ============ إضافة مهمة ============
+document.getElementById("addBtn").onclick = openAddSheet;
+
+function openAddSheet() {
+  const sheetRoot = document.getElementById("sheetRoot");
+  sheetRoot.innerHTML = `
+    <div class="sheet-overlay" id="overlay">
+      <div class="sheet">
+        <h3>مهمة جديدة</h3>
+        <textarea id="noteInput" rows="2" placeholder="What needs your attention?"></textarea>
+        <div class="urgency-row">
+          <button data-u="now" class="sel-now">🔴 NOW</button>
+          <button data-u="next" class="sel-next">🟠 NEXT</button>
+          <button data-u="later" class="sel-later">🟢 LATER</button>
+        </div>
+        <div class="refill-toggle" id="refillToggle">
+          <div class="refill-circle" id="refillCircle"></div>
+          <span>Refill</span>
+        </div>
+        <div class="refill-fields" id="refillFields">
+          <input type="text" id="refillId" placeholder="رقم الهوية" />
+          <input type="text" id="refillPhone" placeholder="رقم الجوال" />
+        </div>
+        <button class="sheet-btn" id="submitTaskBtn">إضافة</button>
+        <button class="cancel-btn" id="closeAddSheet">إلغاء</button>
+      </div>
+    </div>`;
+  let urgency = "later";
+  let refillOn = false;
+  const buttons = sheetRoot.querySelectorAll(".urgency-row button");
+  function paintUrgency() {
+    buttons.forEach((b) => b.style.opacity = b.dataset.u === urgency ? "1" : "0.45");
+  }
+  paintUrgency();
+  buttons.forEach((b) => {
+    b.onclick = () => { urgency = b.dataset.u; paintUrgency(); };
+  });
+  document.getElementById("refillToggle").onclick = () => {
+    refillOn = !refillOn;
+    document.getElementById("refillCircle").classList.toggle("on", refillOn);
+    document.getElementById("refillFields").classList.toggle("show", refillOn);
+  };
+  document.getElementById("submitTaskBtn").onclick = () => {
+    const note = document.getElementById("noteInput").value.trim();
+    if (!note) return;
+    const tasks = currentTasks();
+    const newTask = {
+      id: uid(),
+      note,
+      urgency,
+      refillEnabled: refillOn,
+      refillIdNumber: refillOn ? document.getElementById("refillId").value.trim() : "",
+      refillPhone: refillOn ? document.getElementById("refillPhone").value.trim() : "",
+      status: getActiveTask() ? "open" : "active",
+      createdAt: new Date().toISOString(),
+      parkedAt: null,
+      completedAt: null,
+    };
+    tasks.push(newTask);
+    saveStore();
+    closeSheet();
+    renderAll();
+  };
+  document.getElementById("closeAddSheet").onclick = closeSheet;
+  document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
+}
+
+// ============ Panic Mode ============
+document.getElementById("panicBtn").onclick = () => {
+  const tasks = currentTasks();
+  const order = { now: 0, next: 1, later: 2 };
+  const active = getActiveTask();
+  const openOnes = tasks.filter((t) => t.status === "open" || t.status === "park" || (t.status === "active"));
+  if (openOnes.length === 0) return;
+  openOnes.sort((a, b) => order[a.urgency] - order[b.urgency]);
+  const winner = openOnes[0];
+  const now = new Date().toISOString();
+  openOnes.forEach((t) => {
+    if (t.id === winner.id) {
+      t.status = "active";
+    } else if (t.status !== "park") {
+      t.status = "park";
+      t.parkedAt = now;
+    }
+  });
+  saveStore();
+  renderAll();
+};
+
+// تحديث دوري لألوان Park (بتتغير مع الوقت) لو الصفحة فاتحة فترة طويلة
+setInterval(renderLists, 60 * 1000);
+
+renderAll();
+
+// تسجيل الـ Service Worker (تخزين مؤقت بس - التطبيق ده أصلًا شغال بالكامل من غير سيرفر)
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
