@@ -112,15 +112,50 @@
   }
   .profile-list-item.current { border-color: var(--turq); background: #17C3B21a; }
   .del-x { color: var(--red); font-size: 18px; padding: 4px 8px; }
+
+  /* ===== Tabs + Manager page ===== */
+  .tabs-row { display: flex; background: #fff; border-bottom: 1px solid var(--line); }
+  .tab-btn {
+    flex: 1; padding: 12px; border: none; background: none; font-weight: 700; font-size: 14px;
+    color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent;
+  }
+  .tab-btn.active { color: var(--navy); border-bottom-color: var(--turq); }
+  .mgr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .mgr-card {
+    background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 10px;
+    text-align: center; cursor: pointer; font-weight: 700; font-size: 13px;
+  }
+  .mgr-card .mgr-icon { font-size: 24px; display: block; margin-bottom: 6px; }
+  .mgr-back { background: none; border: none; color: var(--navy-2); font-weight: 700; font-size: 14px; cursor: pointer; padding: 10px 0; }
+  .mgr-list-item {
+    background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 8px;
+  }
+  .mgr-list-item .row1 { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 14px; }
+  .mgr-list-item .row2 { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .mgr-add-btn {
+    width: 100%; padding: 12px; border-radius: 10px; border: 1.5px dashed var(--turq); color: var(--navy-2);
+    background: #17C3B20d; font-weight: 700; margin: 14px 0; cursor: pointer;
+  }
+  .mgr-search { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 12px; font-family: inherit; }
+  .file-download-link { color: var(--navy-2); font-weight: 700; font-size: 13px; text-decoration: none; }
 </style>
 </head>
 <body>
 
 <div class="top-bar">
   <h1>Focus</h1>
-  <button class="profile-chip" id="profileChip">👤 ...</button>
+  <div style="display:flex; gap:8px;">
+    <button class="profile-chip" id="importBtn">⬇ استيراد</button>
+    <button class="profile-chip" id="profileChip">👤 ...</button>
+  </div>
 </div>
 
+<div class="tabs-row">
+  <button class="tab-btn active" id="tabTasksBtn">المهام</button>
+  <button class="tab-btn" id="tabManagerBtn">الإداريات</button>
+</div>
+
+<div id="tasksPage">
 <div class="container">
   <div class="section-label">التركيز الحالي</div>
   <div class="active-card" id="activeCard"></div>
@@ -143,6 +178,11 @@
 
 <button class="panic-btn" id="panicBtn">⚡ Panic Mode</button>
 <div class="fab-row"><button class="fab" id="addBtn">+</button></div>
+</div>
+
+<div id="managerPage" style="display:none">
+  <div class="container" id="managerContainer"></div>
+</div>
 
 <div id="sheetRoot"></div>
 
@@ -153,9 +193,13 @@ const STORE_KEY = "focus_offline_v1";
 function loadStore() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (!parsed.managerByProfile) parsed.managerByProfile = {};
+      return parsed;
+    }
   } catch (e) {}
-  return { profiles: [], currentProfileId: null, tasksByProfile: {} };
+  return { profiles: [], currentProfileId: null, tasksByProfile: {}, managerByProfile: {} };
 }
 function saveStore() { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
 
@@ -246,6 +290,81 @@ function openProfileSheet() {
   document.getElementById("closeProfileSheet").onclick = closeSheet;
   document.getElementById("overlay").onclick = (e) => {
     if (e.target.id === "overlay") closeSheet();
+  };
+}
+
+// ============ استيراد المهام من التطبيق القديم (Focus / Railway) ============
+// خطوات الاستخدام: افتح التطبيق القديم في المتصفح وسجل دخولك، وبعدين روح على
+// الرابط: <رابط التطبيق>/api/tasks (في نفس التبويب) - هتظهر لك بيانات JSON خام،
+// انسخها كلها والصقها في الصندوق اللي هيفتح هنا.
+const OLD_URGENCY_MAP = { now: "now", later: "next", end_shift: "later" };
+document.getElementById("importBtn").onclick = openImportSheet;
+
+function openImportSheet() {
+  const sheetRoot = document.getElementById("sheetRoot");
+  sheetRoot.innerHTML = `
+    <div class="sheet-overlay" id="overlay">
+      <div class="sheet">
+        <h3>استيراد المهام من التطبيق القديم</h3>
+        <p style="font-size:13px; color:var(--muted); margin-top:0;">
+          افتح التطبيق القديم وسجل دخولك، وبعدين روح على الرابط
+          <b>/api/tasks</b> (بعد رابط التطبيق) في نفس التبويب - هيظهرلك نص JSON.
+          انسخه كله والصقه هنا تحت.
+        </p>
+        <textarea id="importText" rows="6" placeholder="الصق نص JSON هنا"></textarea>
+        <button class="sheet-btn" id="runImportBtn">استيراد</button>
+        <button class="cancel-btn" id="closeImportSheet">إلغاء</button>
+        <p id="importResult" style="font-size:13px; margin-top:8px;"></p>
+      </div>
+    </div>`;
+  document.getElementById("closeImportSheet").onclick = closeSheet;
+  document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
+  document.getElementById("runImportBtn").onclick = () => {
+    const raw = document.getElementById("importText").value.trim();
+    const resultEl = document.getElementById("importResult");
+    if (!raw) { resultEl.textContent = "محتاج تلصق نص JSON الأول."; return; }
+    let oldTasks;
+    try {
+      oldTasks = JSON.parse(raw);
+      if (!Array.isArray(oldTasks)) throw new Error("not array");
+    } catch (e) {
+      resultEl.textContent = "النص مش JSON صحيح - تأكد إنك نسخت كل المحتوى من /api/tasks.";
+      return;
+    }
+    const tasks = currentTasks();
+    const existingOldIds = new Set(
+      tasks.filter((t) => t.importedFromId).map((t) => t.importedFromId)
+    );
+    let added = 0, skipped = 0;
+    const hasActiveAlready = !!getActiveTask();
+    let activeAssigned = hasActiveAlready;
+    for (const t of oldTasks) {
+      if (!t || !t.id) continue;
+      if (existingOldIds.has(String(t.id))) { skipped++; continue; }
+      const urgency = OLD_URGENCY_MAP[t.urgency] || "later";
+      let status;
+      if (t.status === "complete") status = "done";
+      else if (t.active && !activeAssigned) { status = "active"; activeAssigned = true; }
+      else if (t.parkedAt) status = "park";
+      else status = "open";
+      tasks.push({
+        id: uid(),
+        importedFromId: String(t.id),
+        note: t.note || "",
+        urgency,
+        refillEnabled: !!t.refillEnabled,
+        refillIdNumber: t.idNumber || "",
+        refillPhone: t.phoneNumber || "",
+        status,
+        createdAt: t.createdAt || new Date().toISOString(),
+        parkedAt: t.parkedAt || null,
+        completedAt: t.completedAt || null,
+      });
+      added++;
+    }
+    saveStore();
+    renderAll();
+    resultEl.textContent = `تم استيراد ${added} مهمة${skipped ? ` (اتجاهل ${skipped} كانوا مستوردين قبل كده)` : ""}.`;
   };
 }
 
@@ -502,6 +621,469 @@ document.getElementById("panicBtn").onclick = () => {
 setInterval(renderLists, 60 * 1000);
 
 renderAll();
+
+// ============ Tabs (المهام / الإداريات) ============
+document.getElementById("tabTasksBtn").onclick = () => showPage("tasks");
+document.getElementById("tabManagerBtn").onclick = () => showPage("manager");
+
+function showPage(page) {
+  document.getElementById("tasksPage").style.display = page === "tasks" ? "" : "none";
+  document.getElementById("managerPage").style.display = page === "manager" ? "" : "none";
+  document.getElementById("tabTasksBtn").classList.toggle("active", page === "tasks");
+  document.getElementById("tabManagerBtn").classList.toggle("active", page === "manager");
+  if (page === "manager") { managerView = { name: "grid" }; renderManager(); }
+}
+
+// ============ الإداريات (روابط / فروع / علاقات / عملاء عروض / مستشفيات / تعاميم / الملفات / تذكيرات) ============
+function currentManager() {
+  if (!store.currentProfileId) return null;
+  if (!store.managerByProfile) store.managerByProfile = {};
+  if (!store.managerByProfile[store.currentProfileId]) {
+    store.managerByProfile[store.currentProfileId] = {
+      links: [], branches: [], contacts: [], offerClients: [],
+      hospitals: [], hospitalDueEntries: [], circulars: [], files: [], reminders: [],
+    };
+  }
+  return store.managerByProfile[store.currentProfileId];
+}
+
+const SIMPLE_SECTIONS = {
+  links: {
+    title: "روابط", icon: "🔗",
+    fields: [
+      { key: "title", label: "العنوان" },
+      { key: "content", label: "الرابط" },
+      { key: "username", label: "يوزر (اختياري)" },
+      { key: "password", label: "باسورد (اختياري)" },
+    ],
+    subtitle: (i) => i.content || "",
+  },
+  branches: {
+    title: "أرقام الفروع", icon: "🏬",
+    fields: [
+      { key: "branchNumber", label: "رقم الفرع" },
+      { key: "phone", label: "رقم الجوال" },
+      { key: "city", label: "المدينة" },
+      { key: "mapLink", label: "لينك جوجل ماب (اختياري)" },
+      { key: "addressDetail", label: "تفاصيل العنوان (اختياري)" },
+    ],
+    subtitle: (i) => [i.city, i.phone].filter(Boolean).join(" · "),
+  },
+  contacts: {
+    title: "العلاقات", icon: "👥",
+    fields: [
+      { key: "name", label: "الاسم" },
+      { key: "profession", label: "المهنة" },
+      { key: "phone", label: "رقم الجوال" },
+    ],
+    subtitle: (i) => [i.profession, i.phone].filter(Boolean).join(" · "),
+  },
+  offerClients: {
+    title: "عملاء عروض", icon: "🏷️",
+    fields: [
+      { key: "itemCode", label: "كود الصنف" },
+      { key: "itemName", label: "اسم الصنف" },
+      { key: "phone", label: "رقم جوال العميل" },
+    ],
+    subtitle: (i) => [i.itemCode, i.phone].filter(Boolean).join(" · "),
+  },
+  reminders: {
+    title: "التذكيرات (مهام دورية)", icon: "🔔",
+    fields: [
+      { key: "text", label: "نص التذكير" },
+      { key: "frequency", label: "التكرار (يومي / أسبوعي / شهري)" },
+    ],
+    subtitle: (i) => i.frequency || "",
+  },
+};
+
+let managerView = { name: "grid" };
+
+function renderManager() {
+  const el = document.getElementById("managerContainer");
+  if (managerView.name === "grid") return renderManagerGrid(el);
+  if (managerView.name === "simple") return renderSimpleSection(el, managerView.key);
+  if (managerView.name === "hospitals") return renderHospitalsList(el);
+  if (managerView.name === "hospitalDetail") return renderHospitalDetail(el, managerView.id);
+  if (managerView.name === "circulars") return renderCirculars(el);
+  if (managerView.name === "files") return renderFiles(el);
+}
+
+const MANAGER_CARDS = [
+  { key: "links", type: "simple", icon: "🔗", title: "روابط" },
+  { key: "branches", type: "simple", icon: "🏬", title: "أرقام الفروع" },
+  { key: "contacts", type: "simple", icon: "👥", title: "العلاقات" },
+  { key: "offerClients", type: "simple", icon: "🏷️", title: "عملاء عروض" },
+  { key: "hospitals", type: "hospitals", icon: "🏥", title: "مستحقات المستشفيات" },
+  { key: "reminders", type: "simple", icon: "🔔", title: "التذكيرات" },
+  { key: "circulars", type: "circulars", icon: "📋", title: "تعاميم" },
+  { key: "files", type: "files", icon: "📁", title: "الملفات" },
+];
+
+function renderManagerGrid(el) {
+  el.innerHTML = `<div class="section-label">الإداريات</div><div class="mgr-grid" id="mgrGrid"></div>`;
+  const grid = document.getElementById("mgrGrid");
+  grid.innerHTML = MANAGER_CARDS.map(
+    (c) => `<div class="mgr-card" data-key="${c.key}"><span class="mgr-icon">${c.icon}</span>${c.title}</div>`
+  ).join("");
+  grid.querySelectorAll("[data-key]").forEach((card) => {
+    card.onclick = () => {
+      const conf = MANAGER_CARDS.find((c) => c.key === card.dataset.key);
+      if (conf.type === "simple") managerView = { name: "simple", key: conf.key };
+      else if (conf.type === "hospitals") managerView = { name: "hospitals" };
+      else if (conf.type === "circulars") managerView = { name: "circulars" };
+      else if (conf.type === "files") managerView = { name: "files" };
+      renderManager();
+    };
+  });
+}
+
+function backToGrid() { managerView = { name: "grid" }; renderManager(); }
+
+// ---- أقسام بسيطة (روابط / فروع / علاقات / عملاء عروض / تذكيرات) ----
+function renderSimpleSection(el, key, filterText) {
+  const conf = SIMPLE_SECTIONS[key];
+  const mgr = currentManager();
+  const items = mgr[key] || [];
+  const q = (filterText || "").trim().toLowerCase();
+  const filtered = q
+    ? items.filter((i) => conf.fields.some((f) => (i[f.key] || "").toLowerCase().includes(q)))
+    : items;
+  el.innerHTML = `
+    <button class="mgr-back" id="mgrBack">‹ رجوع</button>
+    <div class="section-label">${conf.title}</div>
+    <input class="mgr-search" id="mgrSearch" placeholder="بحث..." value="${escapeHtml(filterText || "")}" />
+    <button class="mgr-add-btn" id="mgrAddBtn">+ إضافة</button>
+    <div id="mgrListWrap"></div>
+  `;
+  const listWrap = document.getElementById("mgrListWrap");
+  listWrap.innerHTML = filtered.length === 0
+    ? `<p class="empty">مفيش عناصر لسه.</p>`
+    : filtered
+        .map(
+          (i) => `
+      <div class="mgr-list-item" data-id="${i.id}">
+        <div class="row1"><span>${escapeHtml(i[conf.fields[0].key] || "")}</span><span class="del-x" data-del="${i.id}">✕</span></div>
+        <div class="row2">${escapeHtml(conf.subtitle(i))}</div>
+      </div>`
+        )
+        .join("");
+  listWrap.querySelectorAll("[data-del]").forEach((btn) => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      if (!confirm("متأكد إنك عايز تمسحه؟")) return;
+      mgr[key] = mgr[key].filter((i) => i.id !== btn.dataset.del);
+      saveStore();
+      renderSimpleSection(el, key, document.getElementById("mgrSearch").value);
+    };
+  });
+  document.getElementById("mgrBack").onclick = backToGrid;
+  document.getElementById("mgrSearch").oninput = (e) => renderSimpleSection(el, key, e.target.value);
+  document.getElementById("mgrAddBtn").onclick = () => openSimpleAddSheet(key, el);
+}
+
+function openSimpleAddSheet(key, el) {
+  const conf = SIMPLE_SECTIONS[key];
+  const sheetRoot = document.getElementById("sheetRoot");
+  sheetRoot.innerHTML = `
+    <div class="sheet-overlay" id="overlay">
+      <div class="sheet">
+        <h3>إضافة - ${conf.title}</h3>
+        ${conf.fields.map((f) => `<input type="text" id="f_${f.key}" placeholder="${f.label}" />`).join("")}
+        <button class="sheet-btn" id="saveSimpleBtn">حفظ</button>
+        <button class="cancel-btn" id="closeSimpleSheet">إلغاء</button>
+      </div>
+    </div>`;
+  document.getElementById("closeSimpleSheet").onclick = closeSheet;
+  document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
+  document.getElementById("saveSimpleBtn").onclick = () => {
+    const item = { id: uid(), createdAt: new Date().toISOString() };
+    conf.fields.forEach((f) => { item[f.key] = document.getElementById("f_" + f.key).value.trim(); });
+    if (!item[conf.fields[0].key]) return;
+    const mgr = currentManager();
+    mgr[key].push(item);
+    saveStore();
+    closeSheet();
+    renderSimpleSection(el, key);
+  };
+}
+
+// ---- مستحقات المستشفيات (مستشفى -> شهور/مستحقات) ----
+function renderHospitalsList(el) {
+  const mgr = currentManager();
+  el.innerHTML = `
+    <button class="mgr-back" id="mgrBack">‹ رجوع</button>
+    <div class="section-label">مستحقات المستشفيات</div>
+    <button class="mgr-add-btn" id="mgrAddHospBtn">+ إضافة مستشفى</button>
+    <div id="hospListWrap"></div>
+  `;
+  document.getElementById("hospListWrap").innerHTML = mgr.hospitals.length === 0
+    ? `<p class="empty">مفيش مستشفيات لسه.</p>`
+    : mgr.hospitals
+        .map(
+          (h) => `
+      <div class="mgr-list-item" data-id="${h.id}">
+        <div class="row1"><span>${escapeHtml(h.name)}</span><span class="del-x" data-del="${h.id}">✕</span></div>
+        <div class="row2">${escapeHtml(h.contractor || "")}</div>
+      </div>`
+        )
+        .join("");
+  document.querySelectorAll("#hospListWrap [data-id]").forEach((row) => {
+    row.onclick = (e) => {
+      if (e.target.dataset.del) return;
+      managerView = { name: "hospitalDetail", id: row.dataset.id };
+      renderManager();
+    };
+  });
+  document.querySelectorAll("#hospListWrap [data-del]").forEach((btn) => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      if (!confirm("هتتمسح كل بيانات المستشفى ده - متأكد؟")) return;
+      mgr.hospitals = mgr.hospitals.filter((h) => h.id !== btn.dataset.del);
+      mgr.hospitalDueEntries = mgr.hospitalDueEntries.filter((e2) => e2.hospitalId !== btn.dataset.del);
+      saveStore();
+      renderHospitalsList(el);
+    };
+  });
+  document.getElementById("mgrBack").onclick = backToGrid;
+  document.getElementById("mgrAddHospBtn").onclick = () => {
+    const sheetRoot = document.getElementById("sheetRoot");
+    sheetRoot.innerHTML = `
+      <div class="sheet-overlay" id="overlay">
+        <div class="sheet">
+          <h3>مستشفى جديد</h3>
+          <input type="text" id="hospName" placeholder="اسم المستشفى" />
+          <input type="text" id="hospContractor" placeholder="اسم المتعاقدين معاه" />
+          <button class="sheet-btn" id="saveHospBtn">حفظ</button>
+          <button class="cancel-btn" id="closeHospSheet">إلغاء</button>
+        </div>
+      </div>`;
+    document.getElementById("closeHospSheet").onclick = closeSheet;
+    document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
+    document.getElementById("saveHospBtn").onclick = () => {
+      const name = document.getElementById("hospName").value.trim();
+      if (!name) return;
+      mgr.hospitals.push({ id: uid(), name, contractor: document.getElementById("hospContractor").value.trim(), createdAt: new Date().toISOString() });
+      saveStore();
+      closeSheet();
+      renderHospitalsList(el);
+    };
+  };
+}
+
+function renderHospitalDetail(el, hospId) {
+  const mgr = currentManager();
+  const hosp = mgr.hospitals.find((h) => h.id === hospId);
+  if (!hosp) { managerView = { name: "hospitals" }; return renderManager(); }
+  const entries = mgr.hospitalDueEntries.filter((e2) => e2.hospitalId === hospId).sort((a, b) => (a.month < b.month ? 1 : -1));
+  el.innerHTML = `
+    <button class="mgr-back" id="mgrBack">‹ رجوع لكل المستشفيات</button>
+    <div class="section-label">${escapeHtml(hosp.name)} - ${escapeHtml(hosp.contractor || "")}</div>
+    <button class="mgr-add-btn" id="addMonthBtn">+ إضافة شهر</button>
+    <div id="monthsWrap"></div>
+  `;
+  document.getElementById("monthsWrap").innerHTML = entries.length === 0
+    ? `<p class="empty">مفيش شهور لسه.</p>`
+    : entries
+        .map(
+          (e2) => `
+      <div class="mgr-list-item">
+        <div class="row1">
+          <span>${escapeHtml(e2.month)} - ${e2.amount ?? ""}</span>
+          <span style="display:flex; align-items:center; gap:10px;">
+            <span data-received="${e2.id}" style="cursor:pointer; width:18px; height:18px; border-radius:50%; display:inline-block; border:2px solid var(--green-ok); background:${e2.received ? "var(--green-ok)" : "#fff"}"></span>
+            <span class="del-x" data-delmonth="${e2.id}">✕</span>
+          </span>
+        </div>
+        <div class="row2">${e2.received ? "استلم" : "لسه ماستلمش"}</div>
+      </div>`
+        )
+        .join("");
+  document.querySelectorAll("[data-received]").forEach((dot) => {
+    dot.onclick = () => {
+      const entry = mgr.hospitalDueEntries.find((x) => x.id === dot.dataset.received);
+      entry.received = entry.received ? 0 : 1;
+      saveStore();
+      renderHospitalDetail(el, hospId);
+    };
+  });
+  document.querySelectorAll("[data-delmonth]").forEach((btn) => {
+    btn.onclick = () => {
+      if (!confirm("متأكد؟")) return;
+      mgr.hospitalDueEntries = mgr.hospitalDueEntries.filter((x) => x.id !== btn.dataset.delmonth);
+      saveStore();
+      renderHospitalDetail(el, hospId);
+    };
+  });
+  document.getElementById("mgrBack").onclick = () => { managerView = { name: "hospitals" }; renderManager(); };
+  document.getElementById("addMonthBtn").onclick = () => {
+    const sheetRoot = document.getElementById("sheetRoot");
+    sheetRoot.innerHTML = `
+      <div class="sheet-overlay" id="overlay">
+        <div class="sheet">
+          <h3>إضافة شهر مستحق</h3>
+          <input type="text" id="monthName" placeholder="الشهر (مثال: سبتمبر 2026)" />
+          <input type="number" id="monthAmount" placeholder="قيمة المستحق" />
+          <button class="sheet-btn" id="saveMonthBtn">حفظ</button>
+          <button class="cancel-btn" id="closeMonthSheet">إلغاء</button>
+        </div>
+      </div>`;
+    document.getElementById("closeMonthSheet").onclick = closeSheet;
+    document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
+    document.getElementById("saveMonthBtn").onclick = () => {
+      const month = document.getElementById("monthName").value.trim();
+      if (!month) return;
+      mgr.hospitalDueEntries.push({
+        id: uid(), hospitalId: hospId, month,
+        amount: parseFloat(document.getElementById("monthAmount").value) || 0,
+        received: 0, createdAt: new Date().toISOString(),
+      });
+      saveStore();
+      closeSheet();
+      renderHospitalDetail(el, hospId);
+    };
+  };
+}
+
+// ---- تعاميم (نص + مرفق صورة/ملف كـ dataURL) ----
+function renderCirculars(el) {
+  const mgr = currentManager();
+  el.innerHTML = `
+    <button class="mgr-back" id="mgrBack">‹ رجوع</button>
+    <div class="section-label">تعاميم</div>
+    <button class="mgr-add-btn" id="addCircularBtn">+ إضافة تعميم</button>
+    <div id="circWrap"></div>
+  `;
+  const sorted = [...mgr.circulars].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  document.getElementById("circWrap").innerHTML = sorted.length === 0
+    ? `<p class="empty">مفيش تعاميم لسه.</p>`
+    : sorted
+        .map(
+          (c) => `
+      <div class="mgr-list-item">
+        <div class="row1">
+          <span>${c.type === "insurance" ? "تعميم تأمين" : "تعميم إداري"}</span>
+          <span class="del-x" data-delcirc="${c.id}">✕</span>
+        </div>
+        <div class="row2">${escapeHtml(c.text || "")}</div>
+        <div class="row2">${new Date(c.createdAt).toLocaleDateString("ar-EG")} ${c.fileDataUrl ? `· <a class="file-download-link" href="${c.fileDataUrl}" download="${escapeHtml(c.fileName || "مرفق")}">تحميل المرفق</a>` : ""}</div>
+      </div>`
+        )
+        .join("");
+  document.querySelectorAll("[data-delcirc]").forEach((btn) => {
+    btn.onclick = () => {
+      if (!confirm("متأكد؟")) return;
+      mgr.circulars = mgr.circulars.filter((c) => c.id !== btn.dataset.delcirc);
+      saveStore();
+      renderCirculars(el);
+    };
+  });
+  document.getElementById("mgrBack").onclick = backToGrid;
+  document.getElementById("addCircularBtn").onclick = () => {
+    const sheetRoot = document.getElementById("sheetRoot");
+    sheetRoot.innerHTML = `
+      <div class="sheet-overlay" id="overlay">
+        <div class="sheet">
+          <h3>تعميم جديد</h3>
+          <div class="urgency-row">
+            <button data-t="admin" class="sel-now" style="flex:1">تعميم إداري</button>
+            <button data-t="insurance" class="sel-next" style="flex:1">تعميم تأمين</button>
+          </div>
+          <textarea id="circText" rows="3" placeholder="نص التعميم"></textarea>
+          <input type="file" id="circFile" />
+          <button class="sheet-btn" id="saveCircBtn">حفظ</button>
+          <button class="cancel-btn" id="closeCircSheet">إلغاء</button>
+        </div>
+      </div>`;
+    let type = "admin";
+    sheetRoot.querySelectorAll("[data-t]").forEach((b) => {
+      b.style.opacity = b.dataset.t === type ? "1" : "0.45";
+      b.onclick = () => { type = b.dataset.t; sheetRoot.querySelectorAll("[data-t]").forEach((x) => x.style.opacity = x.dataset.t === type ? "1" : "0.45"); };
+    });
+    document.getElementById("closeCircSheet").onclick = closeSheet;
+    document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
+    document.getElementById("saveCircBtn").onclick = () => {
+      const text = document.getElementById("circText").value.trim();
+      const fileInput = document.getElementById("circFile");
+      const finish = (dataUrl, fileName) => {
+        mgr.circulars.push({ id: uid(), type, text, fileDataUrl: dataUrl || null, fileName: fileName || null, createdAt: new Date().toISOString() });
+        saveStore();
+        closeSheet();
+        renderCirculars(el);
+      };
+      if (fileInput.files && fileInput.files[0]) {
+        const reader = new FileReader();
+        reader.onload = () => finish(reader.result, fileInput.files[0].name);
+        reader.readAsDataURL(fileInput.files[0]);
+      } else {
+        finish(null, null);
+      }
+    };
+  };
+}
+
+// ---- الملفات (رفع ملف باسم + تنزيل) ----
+function renderFiles(el) {
+  const mgr = currentManager();
+  el.innerHTML = `
+    <button class="mgr-back" id="mgrBack">‹ رجوع</button>
+    <div class="section-label">الملفات</div>
+    <button class="mgr-add-btn" id="addFileBtn">+ إضافة ملف</button>
+    <div id="filesWrap"></div>
+  `;
+  const sorted = [...mgr.files].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  document.getElementById("filesWrap").innerHTML = sorted.length === 0
+    ? `<p class="empty">مفيش ملفات لسه.</p>`
+    : sorted
+        .map(
+          (f) => `
+      <div class="mgr-list-item">
+        <div class="row1">
+          <span>${escapeHtml(f.name)}</span>
+          <span class="del-x" data-delfile="${f.id}">✕</span>
+        </div>
+        <div class="row2"><a class="file-download-link" href="${f.dataUrl}" download="${escapeHtml(f.originalName || f.name)}">تحميل</a> · ${new Date(f.createdAt).toLocaleDateString("ar-EG")}</div>
+      </div>`
+        )
+        .join("");
+  document.querySelectorAll("[data-delfile]").forEach((btn) => {
+    btn.onclick = () => {
+      if (!confirm("متأكد؟")) return;
+      mgr.files = mgr.files.filter((f) => f.id !== btn.dataset.delfile);
+      saveStore();
+      renderFiles(el);
+    };
+  });
+  document.getElementById("mgrBack").onclick = backToGrid;
+  document.getElementById("addFileBtn").onclick = () => {
+    const sheetRoot = document.getElementById("sheetRoot");
+    sheetRoot.innerHTML = `
+      <div class="sheet-overlay" id="overlay">
+        <div class="sheet">
+          <h3>إضافة ملف</h3>
+          <input type="text" id="fileName" placeholder="اسم الملف" />
+          <input type="file" id="fileInput" />
+          <button class="sheet-btn" id="saveFileBtn">حفظ</button>
+          <button class="cancel-btn" id="closeFileSheet">إلغاء</button>
+        </div>
+      </div>`;
+    document.getElementById("closeFileSheet").onclick = closeSheet;
+    document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
+    document.getElementById("saveFileBtn").onclick = () => {
+      const name = document.getElementById("fileName").value.trim();
+      const fileInput = document.getElementById("fileInput");
+      if (!name || !fileInput.files[0]) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        mgr.files.push({ id: uid(), name, originalName: fileInput.files[0].name, dataUrl: reader.result, createdAt: new Date().toISOString() });
+        saveStore();
+        closeSheet();
+        renderFiles(el);
+      };
+      reader.readAsDataURL(fileInput.files[0]);
+    };
+  };
+}
 
 // تسجيل الـ Service Worker (تخزين مؤقت بس - التطبيق ده أصلًا شغال بالكامل من غير سيرفر)
 if ("serviceWorker" in navigator) {
