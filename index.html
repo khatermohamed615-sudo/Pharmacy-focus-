@@ -223,6 +223,45 @@ function currentTasks() {
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 
+// ============ IndexedDB - لتخزين ملفات كبيرة (Stock/Sales/Category) بعيدًا عن localStorage المحدود ============
+const IDB_NAME = "focusOfflineBigData";
+const IDB_STORE = "kv";
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = () => { req.result.createObjectStore(IDB_STORE); };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbSet(key, value) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, "readwrite");
+    tx.objectStore(IDB_STORE).put(value, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function idbGet(key) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, "readonly");
+    const req = tx.objectStore(IDB_STORE).get(key);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbDelete(key) {
+  const db = await idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, "readwrite");
+    tx.objectStore(IDB_STORE).delete(key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
 // ============ تصدير CSV عام ============
 function downloadCSV(filename, headers, rows) {
   const esc = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
@@ -685,14 +724,15 @@ function showPage(page) {
 let categoryView = { name: "stock" }; // stock | stockDetail | sales | salesDetail
 
 function parseCategoryRows(rows) {
-  if (!rows.length) return [];
+  if (!rows.length) return { items: [], headers: [] };
   const headers = Object.keys(rows[0]);
-  const codeCol = findCol(headers, ["MaterialNumber", "Code", "كود"]);
-  const catCol = findCol(headers, ["category", "كاتيجوري"]);
-  const subCol = findCol(headers, ["sub category", "subcategory", "ساب كاتيجوري"]);
-  return rows
+  const codeCol = findCol(headers, ["MaterialNumber", "MaterialNo", "Material No", "Material Number", "Code", "Item Code", "ItemCode", "SKU", "كود"]);
+  const catCol = findCol(headers, ["category", "Category", "كاتيجوري"]);
+  const subCol = findCol(headers, ["sub category", "subcategory", "Sub Category", "ساب كاتيجوري"]);
+  const items = rows
     .map((r) => ({ code: normalizeCode(r[codeCol]), category: String(r[catCol] || "").trim(), subCategory: String(r[subCol] || "").trim() }))
     .filter((r) => r.code && r.category);
+  return { items, headers };
 }
 
 function monthlySeriesForItems(items, monthsCount) {
@@ -714,12 +754,12 @@ function monthlySeriesForItems(items, monthsCount) {
   return months;
 }
 
-function categoryCompute(mgr) {
+async function categoryCompute(mgr) {
   if (!mgr.categoryFile) return null;
-  const catRows = mgr.categoryFile.rows;
+  const catRows = (await idbGet(profileKey("categoryFile"))) || [];
   const stockByCode = {};
-  (mgr.stock ? mgr.stock.items : []).forEach((s) => { stockByCode[s.code] = s; });
-  const salesItems = mgr.sales ? mgr.sales.items : [];
+  ((await idbGet(profileKey("stock"))) || []).forEach((s) => { stockByCode[s.code] = s; });
+  const salesItems = (await idbGet(profileKey("sales"))) || [];
   const rates = computeMonthlyRates(salesItems);
 
   const groups = {};
@@ -759,18 +799,19 @@ function subGroupBreakdown(rows, stockByCode) {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function renderCategoryPage() {
+async function renderCategoryPage() {
   const el = document.getElementById("categoryContainer");
   const mgr = currentManager();
-  const data = categoryCompute(mgr);
+  el.innerHTML = `<div class="section-label">Category</div><p class="empty">جاري تحميل البيانات...</p>`;
+  const data = await categoryCompute(mgr);
   el.innerHTML = `
     <div class="section-label">Category</div>
     <div class="mgr-list-item">
-      <div class="row2">ملف الأصناف بالكاتيجوري (كود + كاتيجوري + ساب كاتيجوري): ${mgr.categoryFile ? `محدّث ${new Date(mgr.categoryFile.updatedAt).toLocaleString("ar-EG")} (${mgr.categoryFile.rows.length} صف)` : "لسه ماترفعش"}</div>
+      <div class="row2">ملف الأصناف بالكاتيجوري (كود + كاتيجوري + ساب كاتيجوري): ${mgr.categoryFile ? `محدّث ${new Date(mgr.categoryFile.updatedAt).toLocaleString("ar-EG")} (${mgr.categoryFile.count} صف)` : "لسه ماترفعش"}</div>
       <input type="file" id="categoryFileInput" accept=".xlsx,.xls,.csv" style="margin-top:6px;" />
     </div>
     <p style="font-size:12px; color:var(--muted);">بيستخدم نفس ملفي Stock وSales اللي مرفوعين في Stock Manager - مش محتاج يترفعوا تاني هنا.</p>
-    <p id="catStatus" style="font-size:13px; color:var(--muted);"></p>
+    <p id="catStatus" style="font-size:13px; color:var(--muted); white-space:pre-wrap;"></p>
     <div class="urgency-row"><button id="catTabStock" style="flex:1;">Stock</button><button id="catTabSales" style="flex:1;">Sales</button></div>
     <div id="catBody"></div>
   `;
@@ -781,8 +822,13 @@ function renderCategoryPage() {
     statusEl.textContent = "جاري قراءة ملف الكاتيجوري...";
     try {
       const rows = await readExcelFile(file);
-      const parsed = parseCategoryRows(rows);
-      mgr.categoryFile = { rows: parsed, updatedAt: new Date().toISOString() };
+      const { items, headers } = parseCategoryRows(rows);
+      if (items.length === 0) {
+        statusEl.textContent = `مقدرتش أعرف الأعمدة صح. الأعمدة اللي في الملف: ${headers.join(", ")}\nابعتلي الأسماء دي عشان أظبط الكود.`;
+        return;
+      }
+      await idbSet(profileKey("categoryFile"), items);
+      mgr.categoryFile = { updatedAt: new Date().toISOString(), count: items.length };
       saveStore();
       renderCategoryPage();
     } catch (err) {
@@ -1388,14 +1434,20 @@ function normalizeCode(code) {
   return stripped || (s ? "0" : "");
 }
 
+function normHeader(s) {
+  return String(s || "").toLowerCase().replace(/[\s_\-./]/g, "");
+}
+
 function findCol(headers, candidates) {
-  for (const cand of candidates) {
-    const exact = headers.find((h) => h.toLowerCase().trim() === cand.toLowerCase());
-    if (exact) return exact;
+  const normCandidates = candidates.map(normHeader);
+  const normHeaders = headers.map((h) => ({ raw: h, norm: normHeader(h) }));
+  for (const cand of normCandidates) {
+    const exact = normHeaders.find((h) => h.norm === cand);
+    if (exact) return exact.raw;
   }
-  for (const cand of candidates) {
-    const partial = headers.find((h) => h.toLowerCase().includes(cand.toLowerCase()));
-    if (partial) return partial;
+  for (const cand of normCandidates) {
+    const partial = normHeaders.find((h) => h.norm.includes(cand));
+    if (partial) return partial.raw;
   }
   return null;
 }
@@ -1417,40 +1469,52 @@ function readExcelFile(file) {
   });
 }
 
+function detectStockCols(headers) {
+  return {
+    codeCol: findCol(headers, ["MaterialNumber", "MaterialNo", "Material No", "Material Number", "Code", "Item Code", "ItemCode", "SKU", "Item No", "Item Number", "Barcode", "كود", "كود الصنف"]),
+    nameCol: findCol(headers, ["name", "Material Name", "Item Name", "Description", "اسم", "اسم الصنف"]),
+    balCol: findCol(headers, ["UnRestrictedStock", "Un Restricted Stock", "Stock", "Balance", "Qty", "Quantity", "رصيد"]),
+  };
+}
+
 function parseStockRows(rows) {
-  if (!rows.length) return [];
+  if (!rows.length) return { items: [], headers: [], cols: {} };
   const headers = Object.keys(rows[0]);
-  const codeCol = findCol(headers, ["MaterialNumber", "Code", "كود", "materialnumber"]);
-  const nameCol = findCol(headers, ["name", "اسم", "Material name"]);
-  const balCol = findCol(headers, ["UnRestrictedStock", "Stock", "Balance", "رصيد"]);
-  return rows
-    .map((r) => ({
-      code: normalizeCode(r[codeCol]),
-      name: nameCol ? r[nameCol] : "",
-      balance: parseFloat(r[balCol]) || 0,
-    }))
+  const cols = detectStockCols(headers);
+  const items = rows
+    .map((r) => ({ code: normalizeCode(r[cols.codeCol]), name: cols.nameCol ? r[cols.nameCol] : "", balance: parseFloat(r[cols.balCol]) || 0 }))
     .filter((r) => r.code);
+  return { items, headers, cols };
+}
+
+function detectSalesCols(headers) {
+  return {
+    codeCol: findCol(headers, ["MaterialNumber", "MaterialNo", "Material No", "Material Number", "Code", "Item Code", "ItemCode", "SKU", "كود"]),
+    nameCol: findCol(headers, ["name", "Material Name", "Item Name", "Description", "اسم"]),
+    qtyCol: findCol(headers, ["Quantity", "qty", "Qty", "كمية"]),
+    priceCol: findCol(headers, ["item net price", "net price", "netprice", "Net Amount", "Amount"]),
+    discCol: findCol(headers, ["discount", "خصم"]),
+    invTypeCol: findCol(headers, ["Invoice Type", "InvoiceType", "نوع الفاتورة"]),
+    dateCol: findCol(headers, ["date", "Invoice Date", "تاريخ"]),
+  };
 }
 
 function parseSalesRows(rows) {
-  if (!rows.length) return [];
+  if (!rows.length) return { items: [], headers: [], cols: {} };
   const headers = Object.keys(rows[0]);
-  const codeCol = findCol(headers, ["MaterialNumber", "Code", "كود"]);
-  const nameCol = findCol(headers, ["name", "اسم"]);
-  const qtyCol = findCol(headers, ["Quantity", "qty", "كمية"]);
-  const priceCol = findCol(headers, ["item net price", "netprice", "net price"]);
-  const discCol = findCol(headers, ["discount", "خصم"]);
-  const invTypeCol = findCol(headers, ["Invoice Type", "invoicetype"]);
-  const dateCol = findCol(headers, ["date", "تاريخ"]);
-  return rows.map((r) => ({
-    code: normalizeCode(r[codeCol]),
-    name: nameCol ? r[nameCol] : "",
-    qty: parseFloat(r[qtyCol]) || 0,
-    netPrice: priceCol ? parseFloat(r[priceCol]) || 0 : 0,
-    discount: discCol ? parseFloat(r[discCol]) || 0 : 0,
-    invoiceType: invTypeCol ? String(r[invTypeCol] || "") : "",
-    date: dateCol ? r[dateCol] : "",
-  }));
+  const cols = detectSalesCols(headers);
+  const items = rows
+    .map((r) => ({
+      code: normalizeCode(r[cols.codeCol]),
+      name: cols.nameCol ? r[cols.nameCol] : "",
+      qty: parseFloat(r[cols.qtyCol]) || 0,
+      netPrice: cols.priceCol ? parseFloat(r[cols.priceCol]) || 0 : 0,
+      discount: cols.discCol ? parseFloat(r[cols.discCol]) || 0 : 0,
+      invoiceType: cols.invTypeCol ? String(r[cols.invTypeCol] || "") : "",
+      date: cols.dateCol ? r[cols.dateCol] : "",
+    }))
+    .filter((r) => r.code);
+  return { items, headers, cols };
 }
 
 function computeMonthlyRates(salesItems) {
@@ -1471,10 +1535,12 @@ function computeMonthlyRates(salesItems) {
 }
 
 function parseSpecialRows(rows) {
-  if (!rows.length) return [];
+  if (!rows.length) return { codes: [], headers: [] };
   const headers = Object.keys(rows[0]);
-  const codeCol = findCol(headers, ["MaterialNumber", "Code", "كود", "materialnumber"]);
-  return rows.map((r) => normalizeCode(r[codeCol])).filter(Boolean);
+  let codeCol = findCol(headers, ["MaterialNumber", "MaterialNo", "Material No", "Material Number", "Code", "Item Code", "ItemCode", "SKU", "كود"]);
+  if (!codeCol) codeCol = headers[0]; // ملف Special غالبًا عمود واحد بس - نستخدمه لو مفيش تطابق
+  const codes = rows.map((r) => normalizeCode(r[codeCol])).filter(Boolean);
+  return { codes, headers };
 }
 
 function computeSpecialSalesByMonth(salesItems, specialCodesSet) {
@@ -1498,9 +1564,11 @@ function computeSpecialSalesByMonth(salesItems, specialCodesSet) {
   return months;
 }
 
-function stockManagerCompute(mgr) {
-  const stockItems = mgr.stock ? mgr.stock.items : [];
-  const salesItems = mgr.sales ? mgr.sales.items : [];
+function profileKey(type) { return `${type}:${store.currentProfileId}`; }
+
+async function stockManagerCompute(mgr) {
+  const stockItems = (await idbGet(profileKey("stock"))) || [];
+  const salesItems = (await idbGet(profileKey("sales"))) || [];
   const stockByCode = {};
   stockItems.forEach((s) => { stockByCode[s.code] = s; });
   const rates = computeMonthlyRates(salesItems);
@@ -1544,26 +1612,29 @@ const STOCK_TABS = [
   { key: "specific", label: "جرد" },
 ];
 
-function renderStockManager(el) {
+async function renderStockManager(el) {
   const mgr = currentManager();
   const tab = managerView.tab || "urgent";
-  const data = stockManagerCompute(mgr);
+  el.innerHTML = `<button class="mgr-back" id="mgrBack">‹ رجوع</button><div class="section-label">Stock Manager</div><p class="empty">جاري تحميل البيانات...</p>`;
+  document.getElementById("mgrBack").onclick = backToGrid;
+  const data = await stockManagerCompute(mgr);
+
   el.innerHTML = `
     <button class="mgr-back" id="mgrBack">‹ رجوع</button>
     <div class="section-label">Stock Manager</div>
     <div class="mgr-list-item">
-      <div class="row2">ملف Stock: ${mgr.stock ? `محدّث ${new Date(mgr.stock.updatedAt).toLocaleString("ar-EG")} (${mgr.stock.items.length} صنف)` : "لسه ماترفعش"}</div>
+      <div class="row2">ملف Stock: ${mgr.stock ? `محدّث ${new Date(mgr.stock.updatedAt).toLocaleString("ar-EG")} (${mgr.stock.count} صنف)` : "لسه ماترفعش"}</div>
       <input type="file" id="stockFileInput" accept=".xlsx,.xls,.csv" style="margin-top:6px;" />
     </div>
     <div class="mgr-list-item">
-      <div class="row2">ملف Sales: ${mgr.sales ? `محدّث ${new Date(mgr.sales.updatedAt).toLocaleString("ar-EG")} (${mgr.sales.items.length} صف)` : "لسه ماترفعش"}</div>
+      <div class="row2">ملف Sales: ${mgr.sales ? `محدّث ${new Date(mgr.sales.updatedAt).toLocaleString("ar-EG")} (${mgr.sales.count} صف)` : "لسه ماترفعش"}</div>
       <input type="file" id="salesFileInput" accept=".xlsx,.xls,.csv" style="margin-top:6px;" />
     </div>
     <div class="mgr-list-item">
       <div class="row2">ملف Special (كود بس): ${mgr.specialFile ? `محدّث ${new Date(mgr.specialFile.updatedAt).toLocaleString("ar-EG")} (${mgr.specialFile.codes.length} كود)` : "لسه ماترفعش"}</div>
       <input type="file" id="specialFileInput" accept=".xlsx,.xls,.csv" style="margin-top:6px;" />
     </div>
-    <p id="stockStatus" style="font-size:13px; color:var(--muted);"></p>
+    <p id="stockStatus" style="font-size:13px; color:var(--muted); white-space:pre-wrap;"></p>
     <div class="urgency-row" id="stockTabsRow" style="flex-wrap:wrap;"></div>
     <input class="mgr-search" id="stockSearch" placeholder="بحث بالكود أو الاسم..." />
     <div id="stockResultWrap" style="margin-top:12px;"></div>
@@ -1577,9 +1648,18 @@ function renderStockManager(el) {
     statusEl.textContent = "جاري قراءة ملف Stock...";
     try {
       const rows = await readExcelFile(file);
-      const items = parseStockRows(rows);
-      if (mgr.stock) mgr.prevStock = mgr.stock;
-      mgr.stock = { items, updatedAt: new Date().toISOString() };
+      const { items, headers } = parseStockRows(rows);
+      if (items.length === 0) {
+        statusEl.textContent = `مقدرتش أعرف الأعمدة صح. الأعمدة اللي في الملف: ${headers.join(", ")}\nابعتلي الأسماء دي عشان أظبط الكود.`;
+        return;
+      }
+      if (mgr.stock) {
+        const prevItems = await idbGet(profileKey("stock"));
+        if (prevItems) await idbSet(profileKey("prevStock"), prevItems);
+        mgr.prevStock = { updatedAt: mgr.stock.updatedAt };
+      }
+      await idbSet(profileKey("stock"), items);
+      mgr.stock = { updatedAt: new Date().toISOString(), count: items.length };
       saveStore();
       renderStockManager(el);
     } catch (err) {
@@ -1593,8 +1673,13 @@ function renderStockManager(el) {
     statusEl.textContent = "جاري قراءة ملف Sales...";
     try {
       const rows = await readExcelFile(file);
-      const items = parseSalesRows(rows);
-      mgr.sales = { items, updatedAt: new Date().toISOString() };
+      const { items, headers } = parseSalesRows(rows);
+      if (items.length === 0) {
+        statusEl.textContent = `مقدرتش أعرف الأعمدة صح. الأعمدة اللي في الملف: ${headers.join(", ")}\nابعتلي الأسماء دي عشان أظبط الكود.`;
+        return;
+      }
+      await idbSet(profileKey("sales"), items);
+      mgr.sales = { updatedAt: new Date().toISOString(), count: items.length };
       saveStore();
       renderStockManager(el);
     } catch (err) {
@@ -1608,7 +1693,11 @@ function renderStockManager(el) {
     statusEl.textContent = "جاري قراءة ملف Special...";
     try {
       const rows = await readExcelFile(file);
-      const codes = parseSpecialRows(rows);
+      const { codes, headers } = parseSpecialRows(rows);
+      if (codes.length === 0) {
+        statusEl.textContent = `مقدرتش ألاقي أكواد في الملف. الأعمدة اللي فيه: ${headers.join(", ")}`;
+        return;
+      }
       mgr.specialFile = { codes, updatedAt: new Date().toISOString() };
       saveStore();
       renderStockManager(el);
