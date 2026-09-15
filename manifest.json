@@ -1,13 +1,13 @@
 {
   "name": "Focus",
   "short_name": "Focus",
-  "description": "تطبيق تركيز على المهام - يشتغل بالكامل من غير إنترنت",
+  "description": "افهم اللي بيشتتك، حسّن تركيزك، وابني عادات أحسن — يشتغل بالكامل من غير إنترنت",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0B2545",
-  "theme_color": "#0B2545",
+  "background_color": "#F5F4EF",
+  "theme_color": "#3F5638",
   "lang": "ar",
   "dir": "rtl",
   "icons": [

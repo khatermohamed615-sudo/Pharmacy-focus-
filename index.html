@@ -3,1810 +3,1137 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
-<title>Focus (أوفلاين)</title>
+<title>Focus — افهم تشتتك، حسّن تركيزك</title>
 <link rel="manifest" href="./manifest.json" />
-<meta name="theme-color" content="#0B2545" />
+<meta name="theme-color" content="#3F5638" />
 <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --navy: #0B2545;
-    --navy-2: #12395F;
-    --turq: #17C3B2;
-    --amber: #F2A93B;
-    --line: #E3E9F0;
-    --muted: #64748B;
-    --bg: #F5F7FA;
-    --red: #B5473A;
-    --green-ok: #1E7A46;
-    --yellow-ok: #C9581E;
+    --bg: #F5F4EF;
+    --surface: #FFFFFF;
+    --ink: #23271F;
+    --ink-soft: #656B5E;
+    --ink-faint: #9AA093;
+    --sage: #5B7553;
+    --sage-deep: #3F5638;
+    --sage-tint: #E7ECE2;
+    --ochre: #B8863E;
+    --ochre-tint: #F3E7D2;
+    --clay: #A24B3F;
+    --clay-tint: #F1DFDA;
+    --line: #E4E1D6;
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
   }
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
   body {
-    margin: 0; font-family: 'Tahoma', 'Segoe UI', sans-serif; background: var(--bg);
-    color: var(--navy); padding-bottom: 90px; -webkit-tap-highlight-color: transparent;
+    margin: 0; font-family: 'IBM Plex Sans Arabic', Tahoma, 'Segoe UI', sans-serif;
+    background: var(--bg); color: var(--ink); padding-bottom: 84px;
   }
+  button, input, textarea, select { font-family: inherit; }
   .top-bar {
-    background: linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 100%);
-    color: #fff; padding: 16px 18px 20px; display: flex; justify-content: space-between; align-items: center;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px 8px; max-width: 480px; margin: 0 auto;
   }
-  .top-bar h1 { font-size: 20px; margin: 0; font-weight: 800; }
-  .profile-chip {
-    background: rgba(255,255,255,.15); border: none; color: #fff; padding: 7px 14px;
-    border-radius: 999px; font-size: 13px; font-weight: 700; cursor: pointer;
+  .top-bar .brand { display: flex; align-items: baseline; gap: 8px; }
+  .top-bar .brand-mark { font-size: 19px; font-weight: 700; letter-spacing: .2px; }
+  .top-bar .brand-tag { font-size: 11px; color: var(--ink-faint); }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line);
+    background: var(--surface); font-size: 16px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; color: var(--ink-soft);
   }
-  .container { padding: 16px; max-width: 480px; margin: 0 auto; }
-  .section-label { font-size: 12px; font-weight: 700; color: var(--muted); margin: 18px 0 8px; }
-  .active-card {
-    background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 16px;
-    box-shadow: 0 2px 12px rgba(11,37,69,.06);
-  }
-  .active-card .empty-msg { text-align: center; color: var(--muted); padding: 18px 0; font-size: 14px; }
-  .active-note { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-  .active-meta { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
-  .active-actions { display: flex; gap: 10px; }
-  .active-actions button {
-    flex: 1; padding: 10px; border-radius: 10px; border: 1.5px solid var(--line);
-    background: #fff; font-weight: 700; font-size: 14px; cursor: pointer;
-  }
-  .btn-park { color: var(--yellow-ok); border-color: var(--yellow-ok) !important; }
-  .btn-done { color: var(--green-ok); border-color: var(--green-ok) !important; }
+  .app { max-width: 480px; margin: 0 auto; padding: 4px 20px 28px; }
 
-  .task-row {
-    display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid var(--line);
-    border-radius: 12px; padding: 12px; margin-bottom: 8px; cursor: pointer;
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
+    padding: 18px; margin-bottom: 14px;
   }
-  .task-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-  .task-note { flex: 1; font-size: 14px; font-weight: 600; }
-  .task-sub { font-size: 11px; color: var(--muted); }
-  .empty { text-align: center; color: var(--muted); font-size: 13px; padding: 18px 0; }
+  .card-flat { background: transparent; border: none; padding: 0; }
+  .section-title { font-size: 13px; font-weight: 700; color: var(--ink-soft); margin: 22px 0 10px; }
+  .section-title:first-child { margin-top: 4px; }
+  .muted { color: var(--ink-soft); }
+  .faint { color: var(--ink-faint); }
 
-  .fab-row {
-    position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--line);
-    display: flex; justify-content: center; padding: 10px 0; box-shadow: 0 -2px 10px rgba(11,37,69,.06);
+  h1, h2, h3 { margin: 0; }
+  .greeting { font-size: 22px; font-weight: 700; margin-bottom: 2px; }
+  .greeting-sub { font-size: 13px; color: var(--ink-soft); margin-bottom: 16px; }
+
+  .main-focus-label { font-size: 12px; font-weight: 700; color: var(--sage-deep); margin-bottom: 8px; }
+  .main-focus-input {
+    width: 100%; border: none; background: transparent; font-size: 17px; font-weight: 600;
+    color: var(--ink); resize: none; padding: 0; line-height: 1.5; min-height: 26px;
   }
-  .fab {
-    width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--turq), var(--navy-2));
-    color: #fff; font-size: 28px; border: none; box-shadow: 0 4px 14px rgba(23,195,178,.4); cursor: pointer;
+  .main-focus-input::placeholder { color: var(--ink-faint); font-weight: 500; }
+  .main-focus-input:focus { outline: none; }
+
+  .stat-row { display: flex; gap: 10px; }
+  .stat-chip {
+    flex: 1; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md);
+    padding: 12px 10px; text-align: center; cursor: pointer;
   }
-  .panic-btn {
-    position: fixed; bottom: 14px; left: 16px; background: #fff; border: 1.5px solid var(--red); color: var(--red);
-    border-radius: 999px; padding: 8px 14px; font-size: 12px; font-weight: 700; cursor: pointer;
+  .stat-chip .stat-val { font-size: 18px; font-weight: 700; }
+  .stat-chip .stat-lbl { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+
+  .ring { border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ring-inner {
+    background: var(--surface); border-radius: 50%; width: 76%; height: 76%; display: flex;
+    flex-direction: column; align-items: center; justify-content: center;
   }
+  .ring-num { font-size: 22px; font-weight: 700; line-height: 1; }
+  .ring-cap { font-size: 10px; color: var(--ink-soft); margin-top: 3px; }
+
+  .score-row { display: flex; align-items: center; gap: 16px; }
+  .score-text-title { font-size: 15px; font-weight: 700; }
+  .score-text-desc { font-size: 12px; color: var(--ink-soft); margin-top: 3px; line-height: 1.5; }
+
+  .chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
+    padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--ink);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .chip:active { background: var(--sage-tint); border-color: var(--sage); }
+  .chip-add {
+    border-style: dashed; color: var(--ink-soft);
+  }
+
+  .habit-row {
+    display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line);
+  }
+  .habit-row:last-child { border-bottom: none; }
+  .habit-check {
+    width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--line); flex-shrink: 0;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px;
+    color: transparent; background: var(--surface);
+  }
+  .habit-check.done { background: var(--sage); border-color: var(--sage); color: #fff; }
+  .habit-name { font-size: 14px; font-weight: 600; flex: 1; }
+  .habit-name.done-text { color: var(--ink-faint); text-decoration: line-through; }
+  .habit-meta { font-size: 11px; color: var(--ink-soft); }
+  .habit-streak { font-size: 12px; font-weight: 700; color: var(--ochre); white-space: nowrap; }
+  .habit-del { color: var(--ink-faint); font-size: 15px; padding: 4px 6px; cursor: pointer; }
+
+  .list-empty { text-align: center; color: var(--ink-faint); font-size: 13px; padding: 26px 10px; }
+
+  .btn-primary {
+    width: 100%; padding: 13px; border-radius: var(--radius-md); border: none; background: var(--sage-deep);
+    color: #fff; font-weight: 700; font-size: 15px; cursor: pointer;
+  }
+  .btn-secondary {
+    width: 100%; padding: 12px; border-radius: var(--radius-md); border: 1.5px solid var(--line);
+    background: var(--surface); color: var(--ink); font-weight: 700; font-size: 14px; cursor: pointer;
+  }
+  .btn-danger { color: var(--clay); border-color: var(--clay); }
+  .btn-ghost { background: none; border: none; color: var(--ink-soft); font-weight: 600; font-size: 13px; padding: 10px; width: 100%; cursor: pointer; }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row > * { flex: 1; }
+
+  .field-label { font-size: 12px; font-weight: 700; color: var(--ink-soft); margin: 12px 0 6px; }
+  .field-label:first-child { margin-top: 0; }
+  .text-input, .num-input {
+    width: 100%; border: 1.5px solid var(--line); border-radius: var(--radius-sm); padding: 11px;
+    font-size: 14px; background: var(--surface); color: var(--ink);
+  }
+  textarea.text-input { resize: vertical; min-height: 60px; }
+
+  .scale-row { display: flex; gap: 6px; }
+  .scale-btn {
+    flex: 1; padding: 9px 0; border-radius: 8px; border: 1.5px solid var(--line); background: var(--surface);
+    font-size: 13px; font-weight: 700; cursor: pointer; color: var(--ink-soft);
+  }
+  .scale-btn.sel { background: var(--sage); border-color: var(--sage); color: #fff; }
+
+  .bars-wrap { display: flex; align-items: flex-end; gap: 8px; height: 130px; padding: 10px 2px 0; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; min-width: 0; }
+  .bar-val { font-size: 10px; color: var(--ink-soft); margin-bottom: 4px; }
+  .bar-fill { width: 100%; border-radius: 6px 6px 2px 2px; background: linear-gradient(180deg, var(--sage), var(--sage-deep)); }
+  .bar-lbl { font-size: 10px; color: var(--ink-faint); margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+  .kv-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--line); }
+  .kv-row:last-child { border-bottom: none; }
+  .kv-label { font-size: 13px; color: var(--ink-soft); }
+  .kv-val { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .trend-up { color: var(--sage-deep); font-size: 11px; font-weight: 700; }
+  .trend-down { color: var(--clay); font-size: 11px; font-weight: 700; }
+  .trend-flat { color: var(--ink-faint); font-size: 11px; font-weight: 700; }
+
+  .insight-card {
+    border-radius: var(--radius-md); padding: 14px 16px; margin-bottom: 10px; font-size: 13.5px;
+    line-height: 1.6; border: 1px solid var(--line); background: var(--surface);
+  }
+  .insight-card.emph { background: var(--sage-tint); border-color: var(--sage); color: var(--sage-deep); font-weight: 600; }
+
+  .top-distraction-card { background: var(--clay-tint); border: 1px solid var(--clay); border-radius: var(--radius-lg); padding: 18px; }
+  .top-distraction-card .td-label { font-size: 11px; font-weight: 700; color: var(--clay); margin-bottom: 6px; }
+  .top-distraction-card .td-name { font-size: 19px; font-weight: 700; margin-bottom: 4px; }
+  .top-distraction-card .td-sub { font-size: 12px; color: #6d332a; }
+
+  .timer-wrap { display: flex; flex-direction: column; align-items: center; padding: 18px 0 6px; }
+  .timer-digits { font-size: 44px; font-weight: 700; letter-spacing: 1px; }
+  .timer-planned { font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
+  .timer-actions { display: flex; gap: 10px; width: 100%; margin-top: 22px; }
+  .duration-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+  .duration-btn {
+    padding: 20px 10px; border-radius: var(--radius-md); border: 1.5px solid var(--line); background: var(--surface);
+    text-align: center; cursor: pointer;
+  }
+  .duration-btn .dmin { font-size: 22px; font-weight: 700; }
+  .duration-btn .dlbl { font-size: 11px; color: var(--ink-soft); margin-top: 2px; }
+
+  .nav-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--line);
+    display: flex; justify-content: space-around; padding: 8px 2px calc(8px + env(safe-area-inset-bottom));
+    z-index: 30;
+  }
+  .nav-btn {
+    background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    color: var(--ink-faint); font-size: 9.5px; font-weight: 700; cursor: pointer; padding: 3px 2px; flex: 1;
+  }
+  .nav-btn .nav-icon { font-size: 18px; line-height: 1; }
+  .nav-btn.active { color: var(--sage-deep); }
 
   .sheet-overlay {
-    position: fixed; inset: 0; background: rgba(11,37,69,.4); display: flex; align-items: flex-end; z-index: 50;
+    position: fixed; inset: 0; background: rgba(35,39,31,.42); display: flex; align-items: flex-end;
+    justify-content: center; z-index: 60;
   }
   .sheet {
-    background: #fff; width: 100%; border-radius: 20px 20px 0 0; padding: 18px; max-height: 85vh; overflow-y: auto;
+    background: var(--surface); width: 100%; max-width: 480px; border-radius: 22px 22px 0 0; padding: 20px;
+    max-height: 88vh; overflow-y: auto;
   }
-  .sheet h3 { margin: 0 0 12px; font-size: 16px; }
-  .sheet textarea, .sheet input {
-    width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 10px; font-size: 14px;
-    margin-bottom: 10px; font-family: inherit;
-  }
-  .urgency-row { display: flex; gap: 8px; margin-bottom: 10px; }
-  .urgency-row button {
-    flex: 1; padding: 9px; border-radius: 10px; border: 1.5px solid var(--line); background: #fff;
-    font-size: 13px; font-weight: 700; cursor: pointer;
-  }
-  .urgency-row button.sel-now { background: #B5473A1a; border-color: var(--red); color: var(--red); }
-  .urgency-row button.sel-next { background: #C9581E1a; border-color: var(--yellow-ok); color: var(--yellow-ok); }
-  .urgency-row button.sel-later { background: #1E7A461a; border-color: var(--green-ok); color: var(--green-ok); }
+  .sheet h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+  .sheet .sheet-sub { font-size: 12px; color: var(--ink-soft); margin-bottom: 14px; }
+  .sheet-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-  .refill-toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; cursor: pointer; }
-  .refill-circle { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--muted); }
-  .refill-circle.on { background: var(--turq); border-color: var(--turq); }
-  .refill-fields { display: none; }
-  .refill-fields.show { display: block; }
+  .toast {
+    position: fixed; bottom: 92px; left: 50%; transform: translateX(-50%); background: var(--sage-deep);
+    color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; z-index: 80;
+    box-shadow: 0 4px 16px rgba(0,0,0,.18); opacity: 0; transition: opacity .2s, transform .2s;
+    pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, -6px); }
 
-  .sheet-btn {
-    width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--navy-2); color: #fff;
-    font-weight: 700; font-size: 15px; cursor: pointer; margin-top: 4px;
-  }
-  .cancel-btn { background: none; color: var(--muted); font-weight: 600; border: none; padding: 10px; width: 100%; cursor: pointer; }
-
-  .profile-list-item {
-    display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1.5px solid var(--line);
-    border-radius: 10px; margin-bottom: 8px; cursor: pointer; font-weight: 700;
-  }
-  .profile-list-item.current { border-color: var(--turq); background: #17C3B21a; }
-  .del-x { color: var(--red); font-size: 18px; padding: 4px 8px; }
-
-  /* ===== Tabs + Manager page ===== */
-  .tabs-row { display: flex; background: #fff; border-bottom: 1px solid var(--line); }
-  .tab-btn {
-    flex: 1; padding: 12px; border: none; background: none; font-weight: 700; font-size: 14px;
-    color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent;
-  }
-  .tab-btn.active { color: var(--navy); border-bottom-color: var(--turq); }
-  .mgr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
-  .mgr-card {
-    background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 10px;
-    text-align: center; cursor: pointer; font-weight: 700; font-size: 13px;
-  }
-  .mgr-card .mgr-icon { font-size: 24px; display: block; margin-bottom: 6px; }
-  .mgr-back { background: none; border: none; color: var(--navy-2); font-weight: 700; font-size: 14px; cursor: pointer; padding: 10px 0; }
-  .mgr-list-item {
-    background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px; margin-bottom: 8px;
-  }
-  .mgr-list-item .row1 { display: flex; justify-content: space-between; align-items: center; font-weight: 700; font-size: 14px; }
-  .mgr-list-item .row2 { font-size: 12px; color: var(--muted); margin-top: 4px; }
-  .mgr-add-btn {
-    width: 100%; padding: 12px; border-radius: 10px; border: 1.5px dashed var(--turq); color: var(--navy-2);
-    background: #17C3B20d; font-weight: 700; margin: 14px 0; cursor: pointer;
-  }
-  .mgr-search { width: 100%; border: 1.5px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 12px; font-family: inherit; }
-  .file-download-link { color: var(--navy-2); font-weight: 700; font-size: 13px; text-decoration: none; }
+  .empty-cta { text-align: center; padding: 30px 14px; }
+  .empty-cta .ec-icon { font-size: 30px; margin-bottom: 8px; }
+  .empty-cta .ec-text { font-size: 13px; color: var(--ink-soft); margin-bottom: 14px; line-height: 1.6; }
 </style>
 </head>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <body>
 
 <div class="top-bar">
-  <h1>Focus</h1>
-  <div style="display:flex; gap:8px;">
-    <button class="profile-chip" id="importBtn">⬇ استيراد</button>
-    <button class="profile-chip" id="profileChip">👤 ...</button>
+  <div class="brand">
+    <span class="brand-mark">Focus</span>
+    <span class="brand-tag">افهم تشتتك، حسّن تركيزك</span>
   </div>
+  <button class="icon-btn" id="settingsBtn">⚙️</button>
 </div>
 
-<div class="tabs-row">
-  <button class="tab-btn active" id="tabTasksBtn">المهام</button>
-  <button class="tab-btn" id="tabManagerBtn">الإداريات</button>
-  <button class="tab-btn" id="tabCategoryBtn">Category</button>
-</div>
+<div class="app" id="app"></div>
 
-<div id="tasksPage">
-<div class="container">
-  <div style="display:flex; gap:8px; margin-bottom:10px;">
-    <input class="mgr-search" id="taskSearchBox" placeholder="بحث في المهام..." style="margin:0; flex:1;" />
-    <button class="mgr-add-btn" id="exportTasksBtn" style="width:auto; margin:0; padding:0 14px; white-space:nowrap;">📤 تصدير</button>
-  </div>
-  <div class="section-label">التركيز الحالي</div>
-  <div class="active-card" id="activeCard"></div>
-
-  <div id="tasksSection">
-    <div class="section-label">المهام</div>
-    <div id="tasksList"></div>
-  </div>
-
-  <div id="parkSection">
-    <div class="section-label">Park</div>
-    <div id="parkList"></div>
-  </div>
-
-  <div id="doneSection">
-    <div class="section-label">خلصت النهاردة</div>
-    <div id="doneList"></div>
-  </div>
-</div>
-
-<button class="panic-btn" id="panicBtn">⚡ Panic Mode</button>
-<div class="fab-row"><button class="fab" id="addBtn">+</button></div>
-</div>
-
-<div id="managerPage" style="display:none">
-  <div class="container" id="managerContainer"></div>
-</div>
-
-<div id="categoryPage" style="display:none">
-  <div class="container" id="categoryContainer"></div>
+<div class="nav-bar" id="navBar">
+  <button class="nav-btn" data-tab="today"><span class="nav-icon">☀️</span>اليوم</button>
+  <button class="nav-btn" data-tab="focus"><span class="nav-icon">⏱</span>تركيز</button>
+  <button class="nav-btn" data-tab="distractions"><span class="nav-icon">🌀</span>تشتيت</button>
+  <button class="nav-btn" data-tab="habits"><span class="nav-icon">✅</span>عادات</button>
+  <button class="nav-btn" data-tab="energy"><span class="nav-icon">🔋</span>طاقة</button>
+  <button class="nav-btn" data-tab="insights"><span class="nav-icon">💡</span>رؤى</button>
+  <button class="nav-btn" data-tab="progress"><span class="nav-icon">📈</span>تقدم</button>
 </div>
 
 <div id="sheetRoot"></div>
+<div class="toast" id="toastRoot"></div>
 
 <script>
-// ============ التخزين المحلي (كل حاجة هنا جوه الجهاز بس - مفيش سيرفر خالص) ============
-const STORE_KEY = "focus_offline_v1";
+/* ============================== تخزين البيانات ============================== */
+const STORAGE_KEY = "focusAppStateV1";
 
-function loadStore() {
+const DEFAULT_CATEGORIES = [
+  { key: "phone", label: "📱 الهاتف" },
+  { key: "whatsapp", label: "💬 واتساب" },
+  { key: "social", label: "📲 سوشيال ميديا" },
+  { key: "people", label: "🗣 أشخاص" },
+  { key: "noise", label: "🔊 ضوضاء" },
+  { key: "thoughts", label: "💭 أفكار" },
+  { key: "task", label: "📋 مهمة تانية" },
+  { key: "boredom", label: "🥱 ملل" },
+  { key: "other", label: "✳️ حاجة تانية" },
+];
+
+const HABIT_PRESETS = [
+  "اقرأ ١٠ دقايق", "رياضة", "اتعلم حاجة جديدة", "نام قبل ١٢",
+  "من غير موبايل أول نص ساعة", "اشرب مية", "تأمل",
+];
+
+function defaultState() {
+  return {
+    version: 1,
+    mainFocusByDate: {},
+    activeSession: null,
+    sessions: [],
+    distractionCategories: DEFAULT_CATEGORIES.slice(),
+    standaloneLogs: [],
+    habits: [],
+    energyLogs: {},
+    weeklyReviews: [],
+  };
+}
+
+let state = loadState();
+
+function loadState() {
   try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (!parsed.managerByProfile) parsed.managerByProfile = {};
-      return parsed;
-    }
-  } catch (e) {}
-  return { profiles: [], currentProfileId: null, tasksByProfile: {}, managerByProfile: {} };
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultState();
+    const parsed = JSON.parse(raw);
+    return Object.assign(defaultState(), parsed);
+  } catch (e) {
+    return defaultState();
+  }
 }
-function saveStore() { localStorage.setItem(STORE_KEY, JSON.stringify(store)); }
-
-let store = loadStore();
-
-function currentTasks() {
-  if (!store.currentProfileId) return [];
-  if (!store.tasksByProfile[store.currentProfileId]) store.tasksByProfile[store.currentProfileId] = [];
-  return store.tasksByProfile[store.currentProfileId];
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
+/* ============================== أدوات عامة ============================== */
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
-
-// ============ IndexedDB - لتخزين ملفات كبيرة (Stock/Sales/Category) بعيدًا عن localStorage المحدود ============
-const IDB_NAME = "focusOfflineBigData";
-const IDB_STORE = "kv";
-function idbOpen() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(IDB_NAME, 1);
-    req.onupgradeneeded = () => { req.result.createObjectStore(IDB_STORE); };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function idbSet(key, value) {
-  const db = await idbOpen();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(IDB_STORE, "readwrite");
-    tx.objectStore(IDB_STORE).put(value, key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-async function idbGet(key) {
-  const db = await idbOpen();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(IDB_STORE, "readonly");
-    const req = tx.objectStore(IDB_STORE).get(key);
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function idbDelete(key) {
-  const db = await idbOpen();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(IDB_STORE, "readwrite");
-    tx.objectStore(IDB_STORE).delete(key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-// ============ تصدير CSV عام ============
-function downloadCSV(filename, headers, rows) {
-  const esc = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
-  const lines = [headers.map(esc).join(",")];
-  rows.forEach((r) => lines.push(headers.map((h) => esc(r[h])).join(",")));
-  const csv = "\uFEFF" + lines.join("\r\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
-}
-
-let taskFilterText = "";
-
-// ============ البروفايلات (تفرقة بسيطة بين اللي بيستخدموا نفس الجهاز - من غير باسورد حقيقي) ============
-function ensureProfile() {
-  if (store.profiles.length === 0) {
-    const name = prompt("اسمك إيه؟ (عشان لو حد تاني استخدم نفس الجهاز، مهامكم متتلخبطش)") || "مستخدم";
-    const p = { id: uid(), name };
-    store.profiles.push(p);
-    store.currentProfileId = p.id;
-    saveStore();
-  }
-  if (!store.currentProfileId) store.currentProfileId = store.profiles[0].id;
-}
-ensureProfile();
-
-function currentProfileName() {
-  const p = store.profiles.find((x) => x.id === store.currentProfileId);
-  return p ? p.name : "؟";
-}
-
-document.getElementById("profileChip").onclick = openProfileSheet;
-
-function openProfileSheet() {
-  const sheetRoot = document.getElementById("sheetRoot");
-  sheetRoot.innerHTML = `
-    <div class="sheet-overlay" id="overlay">
-      <div class="sheet">
-        <h3>مين بيستخدم الجهاز دلوقتي؟</h3>
-        <div id="profileItems"></div>
-        <input type="text" id="newProfileName" placeholder="إضافة اسم جديد" />
-        <button class="sheet-btn" id="addProfileBtn">إضافة</button>
-        <button class="cancel-btn" id="closeProfileSheet">إغلاق</button>
-      </div>
-    </div>`;
-  const itemsEl = document.getElementById("profileItems");
-  itemsEl.innerHTML = store.profiles
-    .map(
-      (p) => `
-    <div class="profile-list-item ${p.id === store.currentProfileId ? "current" : ""}" data-pid="${p.id}">
-      <span>${escapeHtml(p.name)}</span>
-      ${store.profiles.length > 1 ? `<span class="del-x" data-del="${p.id}">✕</span>` : ""}
-    </div>`
-    )
-    .join("");
-  itemsEl.querySelectorAll("[data-pid]").forEach((el) => {
-    el.onclick = (e) => {
-      if (e.target.dataset.del) return;
-      store.currentProfileId = el.dataset.pid;
-      saveStore();
-      closeSheet();
-      renderAll();
-    };
-  });
-  itemsEl.querySelectorAll("[data-del]").forEach((el) => {
-    el.onclick = (e) => {
-      e.stopPropagation();
-      if (!confirm("متأكد؟ هتتمسح مهام الشخص ده من الجهاز ده.")) return;
-      const pid = el.dataset.del;
-      store.profiles = store.profiles.filter((p) => p.id !== pid);
-      delete store.tasksByProfile[pid];
-      if (store.currentProfileId === pid) store.currentProfileId = store.profiles[0]?.id || null;
-      saveStore();
-      openProfileSheet();
-      renderAll();
-    };
-  });
-  document.getElementById("addProfileBtn").onclick = () => {
-    const name = document.getElementById("newProfileName").value.trim();
-    if (!name) return;
-    const p = { id: uid(), name };
-    store.profiles.push(p);
-    store.currentProfileId = p.id;
-    saveStore();
-    closeSheet();
-    renderAll();
-  };
-  document.getElementById("closeProfileSheet").onclick = closeSheet;
-  document.getElementById("overlay").onclick = (e) => {
-    if (e.target.id === "overlay") closeSheet();
-  };
-}
-
-// ============ استيراد المهام من التطبيق القديم (Focus / Railway) ============
-// خطوات الاستخدام: افتح التطبيق القديم في المتصفح وسجل دخولك، وبعدين روح على
-// الرابط: <رابط التطبيق>/api/tasks (في نفس التبويب) - هتظهر لك بيانات JSON خام،
-// انسخها كلها والصقها في الصندوق اللي هيفتح هنا.
-const OLD_URGENCY_MAP = { now: "now", later: "next", end_shift: "later" };
-document.getElementById("importBtn").onclick = openImportSheet;
-
-function openImportSheet() {
-  const sheetRoot = document.getElementById("sheetRoot");
-  sheetRoot.innerHTML = `
-    <div class="sheet-overlay" id="overlay">
-      <div class="sheet">
-        <h3>استيراد المهام من التطبيق القديم</h3>
-        <p style="font-size:13px; color:var(--muted); margin-top:0;">
-          افتح التطبيق القديم وسجل دخولك، وبعدين روح على الرابط
-          <b>/api/tasks</b> (بعد رابط التطبيق) في نفس التبويب - هيظهرلك نص JSON.
-          انسخه كله والصقه هنا تحت.
-        </p>
-        <textarea id="importText" rows="6" placeholder="الصق نص JSON هنا"></textarea>
-        <button class="sheet-btn" id="runImportBtn">استيراد</button>
-        <button class="cancel-btn" id="closeImportSheet">إلغاء</button>
-        <p id="importResult" style="font-size:13px; margin-top:8px;"></p>
-      </div>
-    </div>`;
-  document.getElementById("closeImportSheet").onclick = closeSheet;
-  document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
-  document.getElementById("runImportBtn").onclick = () => {
-    const raw = document.getElementById("importText").value.trim();
-    const resultEl = document.getElementById("importResult");
-    if (!raw) { resultEl.textContent = "محتاج تلصق نص JSON الأول."; return; }
-    let oldTasks;
-    try {
-      oldTasks = JSON.parse(raw);
-      if (!Array.isArray(oldTasks)) throw new Error("not array");
-    } catch (e) {
-      resultEl.textContent = "النص مش JSON صحيح - تأكد إنك نسخت كل المحتوى من /api/tasks.";
-      return;
-    }
-    const tasks = currentTasks();
-    const existingOldIds = new Set(
-      tasks.filter((t) => t.importedFromId).map((t) => t.importedFromId)
-    );
-    let added = 0, skipped = 0;
-    const hasActiveAlready = !!getActiveTask();
-    let activeAssigned = hasActiveAlready;
-    for (const t of oldTasks) {
-      if (!t || !t.id) continue;
-      if (existingOldIds.has(String(t.id))) { skipped++; continue; }
-      const urgency = OLD_URGENCY_MAP[t.urgency] || "later";
-      let status;
-      if (t.status === "complete") status = "done";
-      else if (t.active && !activeAssigned) { status = "active"; activeAssigned = true; }
-      else if (t.parkedAt) status = "park";
-      else status = "open";
-      tasks.push({
-        id: uid(),
-        importedFromId: String(t.id),
-        note: t.note || "",
-        urgency,
-        refillEnabled: !!t.refillEnabled,
-        refillIdNumber: t.idNumber || "",
-        refillPhone: t.phoneNumber || "",
-        status,
-        createdAt: t.createdAt || new Date().toISOString(),
-        parkedAt: t.parkedAt || null,
-        completedAt: t.completedAt || null,
-      });
-      added++;
-    }
-    saveStore();
-    renderAll();
-    resultEl.textContent = `تم استيراد ${added} مهمة${skipped ? ` (اتجاهل ${skipped} كانوا مستوردين قبل كده)` : ""}.`;
-  };
-}
-
-function closeSheet() { document.getElementById("sheetRoot").innerHTML = ""; }
 function escapeHtml(s) {
-  return String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function dateKey(d) {
+  d = d || new Date();
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+function dateKeyFromISO(iso) { return dateKey(new Date(iso)); }
+function todayKey() { return dateKey(new Date()); }
+function last7Keys(offset) {
+  offset = offset || 0;
+  const arr = [];
+  for (let i = 0; i < 7; i++) { const d = new Date(); d.setDate(d.getDate() - i - offset * 7); arr.push(dateKey(d)); }
+  return arr;
+}
+function fmtMin(totalMin) {
+  totalMin = Math.round(totalMin);
+  const h = Math.floor(totalMin / 60), m = totalMin % 60;
+  if (h <= 0) return `${m}د`;
+  return `${h}س ${m}د`;
+}
+function fmtClock(sec) {
+  sec = Math.max(0, Math.round(sec));
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+function pctChange(cur, prev) {
+  if (prev === 0) return cur === 0 ? 0 : null;
+  return Math.round(((cur - prev) / prev) * 100);
+}
+function categoryLabel(key) {
+  const c = state.distractionCategories.find((c) => c.key === key);
+  return c ? c.label : "✳️ " + key;
+}
+function toast(msg) {
+  const t = document.getElementById("toastRoot");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._h);
+  toast._h = setTimeout(() => t.classList.remove("show"), 1800);
+}
+function greetingWord() {
+  const h = new Date().getHours();
+  if (h < 5) return "تصبح على خير";
+  if (h < 12) return "صباح الخير";
+  if (h < 17) return "مساء الخير";
+  if (h < 21) return "مساء الخير";
+  return "مساء الخير";
 }
 
-// ============ منطق المهام ============
-const URGENCY_META = {
-  now: { label: "🔴 NOW", color: "#B5473A" },
-  next: { label: "🟠 NEXT", color: "#C9581E" },
-  later: { label: "🟢 LATER", color: "#1E7A46" },
-};
-
-function parkColor(parkedAt) {
-  const mins = (Date.now() - new Date(parkedAt).getTime()) / 60000;
-  if (mins < 30) return "#1E7A46";
-  if (mins < 60) return "#C9581E";
-  return "#B5473A";
+/* ============================== الجلسات + سجل التشتيت ============================== */
+function sessionActualMin(s) {
+  if (s.actualMin != null) return s.actualMin;
+  return Math.round((new Date(s.endedAt) - new Date(s.startedAt)) / 60000);
+}
+function sessionsInKeys(keysArr) {
+  const set = new Set(keysArr);
+  return state.sessions.filter((s) => set.has(dateKeyFromISO(s.startedAt)));
+}
+function allDistractionEventsInKeys(keysArr) {
+  const set = new Set(keysArr);
+  const events = [];
+  state.standaloneLogs.forEach((l) => { if (set.has(dateKeyFromISO(l.at))) events.push(l); });
+  state.sessions.forEach((s) => s.distractions.forEach((d) => { if (set.has(dateKeyFromISO(d.at))) events.push(d); }));
+  if (state.activeSession) state.activeSession.distractions.forEach((d) => { if (set.has(dateKeyFromISO(d.at))) events.push(d); });
+  return events;
+}
+function countBy(arr, field) {
+  const out = {};
+  arr.forEach((x) => { out[x[field]] = (out[x[field]] || 0) + 1; });
+  return out;
 }
 
-function getActiveTask() { return currentTasks().find((t) => t.status === "active") || null; }
-
-function renderAll() {
-  document.getElementById("profileChip").textContent = "👤 " + currentProfileName();
-  renderActive();
-  renderLists();
+/*
+ * حساب "درجة التركيز" (Focus Score) من ٠ إلى ١٠٠ على فترة معينة (يوم أو أسبوع):
+ *   ٤٠٪  إكمال الجلسات       = عدد الجلسات المكتملة / إجمالي عدد الجلسات
+ *   ٢٥٪  التحكم في المقاطعات  = ١ - (متوسط عدد مرات التشتت لكل جلسة / ٥)  — يوصل للصفر عند ٥ تشتتات فأكتر في المتوسط
+ *   ٢٠٪  مدة التركيز          = إجمالي دقائق التركيز الفعلية / (١٢٠ دقيقة × عدد أيام الفترة)  — الهدف اليومي المرجعي ١٢٠ دقيقة
+ *   ١٥٪  الاستمرارية          = عدد الأيام اللي فيها جلسة واحدة على الأقل / عدد أيام الفترة
+ * الناتج بيتقفل بين ٠ و١٠٠.
+ */
+function computeFocusScore(keysArr) {
+  const sessions = sessionsInKeys(keysArr);
+  if (sessions.length === 0) return 0;
+  const completed = sessions.filter((s) => s.completed).length;
+  const completionRate = completed / sessions.length;
+  const totalInterruptions = sessions.reduce((a, s) => a + s.distractions.length, 0);
+  const avgInterruptions = totalInterruptions / sessions.length;
+  const interruptionControl = Math.max(0, 1 - avgInterruptions / 5);
+  const totalMinutes = sessions.reduce((a, s) => a + sessionActualMin(s), 0);
+  const durationScore = Math.min(1, totalMinutes / (120 * keysArr.length));
+  const daysWithSession = new Set(sessions.map((s) => dateKeyFromISO(s.startedAt))).size;
+  const consistency = daysWithSession / keysArr.length;
+  const score = completionRate * 40 + interruptionControl * 25 + durationScore * 20 + consistency * 15;
+  return Math.round(Math.max(0, Math.min(100, score)));
 }
 
-function renderActive() {
-  const t = getActiveTask();
-  const el = document.getElementById("activeCard");
-  if (!t) {
-    el.innerHTML = `<div class="empty-msg">أنت clear 🎯<br/>مفيش مهمة شغالة دلوقتي</div>`;
-    return;
+function habitDone(h, key) { return !!h.logs[key]; }
+function habitStreak(h) {
+  let streak = 0, d = new Date();
+  if (!habitDone(h, dateKey(d))) d.setDate(d.getDate() - 1);
+  while (habitDone(h, dateKey(d))) { streak++; d.setDate(d.getDate() - 1); }
+  return streak;
+}
+function habitWeeklyPct(h) {
+  const keys = last7Keys(0);
+  const done = keys.filter((k) => habitDone(h, k)).length;
+  return Math.round((done / 7) * 100);
+}
+function habitsAvgWeeklyPct() {
+  if (state.habits.length === 0) return null;
+  return Math.round(state.habits.reduce((a, h) => a + habitWeeklyPct(h), 0) / state.habits.length);
+}
+
+function avgEnergyInKeys(keysArr) {
+  const vals = keysArr.map((k) => state.energyLogs[k]).filter(Boolean).map((e) => e.energy);
+  if (vals.length === 0) return null;
+  return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10;
+}
+
+/* ============================== الرؤى (Insights) ============================== */
+function buildInsights() {
+  const insights = [];
+  const thisWeek = last7Keys(0), lastWeek = last7Keys(1);
+  const thisSessions = sessionsInKeys(thisWeek), lastSessions = sessionsInKeys(lastWeek);
+
+  if (thisSessions.length < 3) {
+    insights.push({ emph: false, text: "كمّل تسجّل جلسات تركيز كذا يوم كمان، وهطلعلك ملاحظات أدق عن نمط تركيزك وتشتتك." });
+    return insights;
   }
-  el.innerHTML = `
-    <div class="active-note">${escapeHtml(t.note)}</div>
-    <div class="active-meta">${URGENCY_META[t.urgency].label}${t.refillEnabled ? " · 💊 Refill" : ""}</div>
-    <div class="active-actions">
-      <button class="btn-park" id="parkActiveBtn">⏸ Park</button>
-      <button class="btn-done" id="doneActiveBtn">✅ Done</button>
+
+  const events = allDistractionEventsInKeys(thisWeek);
+  if (events.length) {
+    const counts = countBy(events, "key");
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    insights.push({ emph: true, text: `أكتر حاجة بتشتتك الأسبوع ده هي ${categoryLabel(top[0])} — ${top[1]} مرة.` });
+  }
+
+  const buckets = { morning: [], afternoon: [], evening: [] };
+  thisSessions.forEach((s) => {
+    const h = new Date(s.startedAt).getHours();
+    const b = h < 12 ? "morning" : h < 18 ? "afternoon" : "evening";
+    buckets[b].push(s);
+  });
+  let bestB = null, bestRate = -1;
+  const labels = { morning: "الصبح", afternoon: "بعد الضهر", evening: "بالليل" };
+  Object.entries(buckets).forEach(([b, list]) => {
+    if (list.length >= 2) { const rate = list.filter((s) => s.completed).length / list.length; if (rate > bestRate) { bestRate = rate; bestB = b; } }
+  });
+  if (bestB) insights.push({ emph: false, text: `تركيزك بيبقى أحسن وبتكمّل جلسات أكتر ${labels[bestB]}.` });
+
+  if (lastSessions.length > 0 && thisSessions.length !== lastSessions.length) {
+    const up = thisSessions.length > lastSessions.length;
+    insights.push({ emph: false, text: `عدد جلسات التركيز ${up ? "زاد" : "قل"} من ${lastSessions.length} لـ ${thisSessions.length} عن الأسبوع اللي فات.` });
+  }
+
+  const avgDur = (list) => (list.length ? Math.round(list.reduce((a, s) => a + sessionActualMin(s), 0) / list.length) : 0);
+  const thisAvg = avgDur(thisSessions), lastAvg = avgDur(lastSessions);
+  if (lastAvg > 0 && thisAvg !== lastAvg) {
+    insights.push({ emph: false, text: `متوسط جلسة التركيز ${thisAvg > lastAvg ? "زاد" : "قل"} من ${lastAvg} دقيقة لـ ${thisAvg} دقيقة.` });
+  }
+
+  const thisInt = thisSessions.reduce((a, s) => a + s.distractions.length, 0);
+  const lastInt = lastSessions.reduce((a, s) => a + s.distractions.length, 0);
+  if (lastInt > 0) {
+    const pct = Math.round(((lastInt - thisInt) / lastInt) * 100);
+    if (pct !== 0) insights.push({ emph: pct > 0, text: pct > 0 ? `عدد مرات التشتت قل ${pct}% عن الأسبوع اللي فات — أحسنت.` : `عدد مرات التشتت زاد ${Math.abs(pct)}% عن الأسبوع اللي فات.` });
+  }
+
+  const energyDays = thisWeek.concat(lastWeek).filter((k) => state.energyLogs[k]);
+  const highDays = energyDays.filter((k) => state.energyLogs[k].energy >= 7);
+  const lowDays = energyDays.filter((k) => state.energyLogs[k].energy < 7);
+  if (highDays.length >= 2 && lowDays.length >= 2) {
+    const highScore = computeFocusScore(highDays), lowScore = computeFocusScore(lowDays);
+    if (highScore > lowScore) {
+      const pct = lowScore > 0 ? Math.round(((highScore - lowScore) / lowScore) * 100) : null;
+      insights.push({ emph: false, text: pct ? `تركيزك بيبقى أحسن بحوالي ${pct}% لما طاقتك فوق ٧ من ١٠.` : `تركيزك بيبقى أوضح لما طاقتك فوق ٧ من ١٠.` });
+    }
+  }
+
+  const habitPct = habitsAvgWeeklyPct();
+  if (habitPct != null && habitPct >= 70) insights.push({ emph: true, text: `ثباتك في العادات ممتاز الأسبوع ده — ${habitPct}%.` });
+
+  if (insights.length === 0) insights.push({ emph: false, text: "بياناتك لسه متقاربة من أسبوع لأسبوع — كمّل واظب وهتبان الأنماط أوضح." });
+  return insights;
+}
+
+function buildRecommendations() {
+  const recs = [];
+  const thisWeek = last7Keys(0), lastWeek = last7Keys(1);
+  const events = allDistractionEventsInKeys(thisWeek), lastEvents = allDistractionEventsInKeys(lastWeek);
+  const screenKeys = ["phone", "whatsapp", "social"];
+  const screenCount = events.filter((e) => screenKeys.includes(e.key)).length;
+  const lastScreenCount = lastEvents.filter((e) => screenKeys.includes(e.key)).length;
+  if (lastScreenCount > 0 && screenCount > lastScreenCount) {
+    recs.push("تشتت الموبايل زاد الأسبوع ده — جرّب جلسة تركيز واحدة وهاتفك في وضع الطيران أو في أوضة تانية.");
+  }
+  const thisSessions = sessionsInKeys(thisWeek);
+  const buckets = { morning: [], afternoon: [], evening: [] };
+  thisSessions.forEach((s) => { const h = new Date(s.startedAt).getHours(); const b = h < 12 ? "morning" : h < 18 ? "afternoon" : "evening"; buckets[b].push(s); });
+  const morningRate = buckets.morning.length >= 2 ? buckets.morning.filter((s) => s.completed).length / buckets.morning.length : null;
+  const otherRates = ["afternoon", "evening"].map((b) => (buckets[b].length >= 2 ? buckets[b].filter((s) => s.completed).length / buckets[b].length : null)).filter((x) => x != null);
+  if (morningRate != null && otherRates.every((r) => morningRate >= r)) {
+    recs.push("تركيزك في الصبح أعلى من باقي اليوم — حاول تحجز أهم مهمة في اليوم في أول ساعتين بعد ما تصحى.");
+  }
+  const stoppedEarly = thisSessions.filter((s) => !s.completed).length;
+  if (thisSessions.length >= 4 && stoppedEarly / thisSessions.length > 0.4) {
+    recs.push("جزء كبير من جلساتك بتتقفل قبل ما تخلص وقتها — جرّب تبدأ بمدة أقصر (١٥ دقيقة) وتزوّد تدريجي.");
+  }
+  if (recs.length === 0) recs.push("كمّل على نفس الاستمرارية — البيانات لسه بتتجمع عشان أقدر أقترحلك حاجة أدق.");
+  return recs.slice(0, 3);
+}
+
+/* ============================== واجهة عامة: تبويبات + شيتات + تايمر ============================== */
+let currentTab = "today";
+let timerInterval = null;
+
+function switchTab(tab) { currentTab = tab; render(); }
+
+function openSheet(html) {
+  const root = document.getElementById("sheetRoot");
+  root.innerHTML = `<div class="sheet-overlay" id="sheetOverlay"><div class="sheet">${html}</div></div>`;
+  document.getElementById("sheetOverlay").addEventListener("click", (e) => { if (e.target.id === "sheetOverlay") closeSheet(); });
+}
+function closeSheet() { document.getElementById("sheetRoot").innerHTML = ""; }
+
+function openDistractionSheet(onPick) {
+  const cats = state.distractionCategories;
+  openSheet(`
+    <h3>ايه اللي شتتك؟</h3>
+    <div class="sheet-sub">اختار الفئة اللي أقرب لتشتيتك دلوقتي</div>
+    <div class="chip-row" id="distCatRow">
+      ${cats.map((c) => `<button class="chip" data-key="${c.key}">${c.label}</button>`).join("")}
+      <button class="chip chip-add" id="addCustomDistCat">+ فئة جديدة</button>
     </div>
-  `;
-  document.getElementById("parkActiveBtn").onclick = () => {
-    t.status = "park";
-    t.parkedAt = new Date().toISOString();
-    saveStore();
-    renderAll();
-  };
-  document.getElementById("doneActiveBtn").onclick = () => {
-    t.status = "done";
-    t.completedAt = new Date().toISOString();
-    saveStore();
-    playDoneSound();
-    renderAll();
-  };
-}
-
-function renderLists() {
-  const tasks = currentTasks();
-  const today = new Date().toDateString();
-  const q = (taskFilterText || "").trim().toLowerCase();
-  const matches = (t) => !q || [t.note, t.refillIdNumber, t.refillPhone].some((v) => (v || "").toLowerCase().includes(q));
-
-  const openTasks = tasks.filter((t) => t.status === "open" && matches(t));
-  const parked = tasks.filter((t) => t.status === "park" && matches(t));
-  const doneToday = tasks.filter((t) => t.status === "done" && new Date(t.completedAt).toDateString() === today && matches(t));
-
-  const order = { now: 0, next: 1, later: 2 };
-  openTasks.sort((a, b) => order[a.urgency] - order[b.urgency]);
-
-  document.getElementById("tasksList").innerHTML =
-    openTasks.length === 0
-      ? `<p class="empty">مفيش مهام لسه.</p>`
-      : openTasks
-          .map(
-            (t) => `
-    <div class="task-row" data-id="${t.id}" data-action="focus">
-      <span class="task-dot" style="background:${URGENCY_META[t.urgency].color}"></span>
-      <div style="flex:1">
-        <div class="task-note">${escapeHtml(t.note)}</div>
-        <div class="task-sub">${URGENCY_META[t.urgency].label}${t.refillEnabled ? " · 💊" : ""}</div>
-      </div>
-    </div>`
-          )
-          .join("");
-
-  document.getElementById("parkList").innerHTML =
-    parked.length === 0
-      ? `<p class="empty">مفيش حاجة في Park.</p>`
-      : parked
-          .map(
-            (t) => `
-    <div class="task-row" data-id="${t.id}" data-action="unpark">
-      <span class="task-dot" style="background:${parkColor(t.parkedAt)}"></span>
-      <div style="flex:1">
-        <div class="task-note">⏸️ ${escapeHtml(t.note)}</div>
-        <div class="task-sub">${URGENCY_META[t.urgency].label}${t.refillEnabled ? " · 💊" : ""}</div>
-      </div>
-    </div>`
-          )
-          .join("");
-
-  document.getElementById("doneList").innerHTML =
-    doneToday.length === 0
-      ? `<p class="empty">لسه مفيش حاجة خلصت النهاردة.</p>`
-      : `<p class="section-label" style="margin-top:0">عدد المهام المنجزة: ${doneToday.length}</p>` +
-        doneToday
-          .map((t) => `<div class="task-row" style="opacity:.65"><div class="task-note" style="text-decoration:line-through">${escapeHtml(t.note)}</div></div>`)
-          .join("");
-
-  document.querySelectorAll("[data-action='focus']").forEach((el) => {
-    el.onclick = () => setActiveFromOpen(el.dataset.id);
+    <button class="btn-ghost" id="cancelDistSheet" style="margin-top:8px;">إلغاء</button>
+  `);
+  document.querySelectorAll("#distCatRow [data-key]").forEach((btn) => {
+    btn.onclick = () => { closeSheet(); onPick(btn.dataset.key); };
   });
-  document.querySelectorAll("[data-action='unpark']").forEach((el) => {
-    el.onclick = () => unparkTask(el.dataset.id);
-  });
-}
-
-function setActiveFromOpen(id) {
-  const tasks = currentTasks();
-  const active = getActiveTask();
-  if (active) {
-    if (!confirm("فيه مهمة شغالة دلوقتي. تحب تعمل Park للمهمة الحالية وتفتح المهمة دي؟")) return;
-    active.status = "park";
-    active.parkedAt = new Date().toISOString();
-  }
-  const t = tasks.find((x) => x.id === id);
-  t.status = "active";
-  saveStore();
-  renderAll();
-}
-
-function unparkTask(id) {
-  const tasks = currentTasks();
-  const active = getActiveTask();
-  const t = tasks.find((x) => x.id === id);
-  if (active) {
-    if (!confirm("فيه مهمة شغالة دلوقتي. تحب تعمل Park للمهمة الحالية وترجّع دي بدل منها؟")) return;
-    active.status = "park";
-    active.parkedAt = new Date().toISOString();
-  }
-  t.status = "active";
-  t.parkedAt = null;
-  saveStore();
-  renderAll();
-}
-
-function playDoneSound() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g);
-    g.connect(ctx.destination);
-    o.frequency.value = 880;
-    g.gain.setValueAtTime(0.15, ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-    o.start();
-    o.stop(ctx.currentTime + 0.4);
-  } catch (e) {}
-}
-
-// ============ إضافة مهمة ============
-document.getElementById("addBtn").onclick = openAddSheet;
-
-function openAddSheet() {
-  const sheetRoot = document.getElementById("sheetRoot");
-  sheetRoot.innerHTML = `
-    <div class="sheet-overlay" id="overlay">
-      <div class="sheet">
-        <h3>مهمة جديدة</h3>
-        <textarea id="noteInput" rows="2" placeholder="What needs your attention?"></textarea>
-        <div class="urgency-row">
-          <button data-u="now" class="sel-now">🔴 NOW</button>
-          <button data-u="next" class="sel-next">🟠 NEXT</button>
-          <button data-u="later" class="sel-later">🟢 LATER</button>
-        </div>
-        <div class="refill-toggle" id="refillToggle">
-          <div class="refill-circle" id="refillCircle"></div>
-          <span>Refill</span>
-        </div>
-        <div class="refill-fields" id="refillFields">
-          <input type="text" id="refillId" placeholder="رقم الهوية" />
-          <input type="text" id="refillPhone" placeholder="رقم الجوال" />
-        </div>
-        <button class="sheet-btn" id="submitTaskBtn">إضافة</button>
-        <button class="cancel-btn" id="closeAddSheet">إلغاء</button>
-      </div>
-    </div>`;
-  let urgency = "later";
-  let refillOn = false;
-  const buttons = sheetRoot.querySelectorAll(".urgency-row button");
-  function paintUrgency() {
-    buttons.forEach((b) => b.style.opacity = b.dataset.u === urgency ? "1" : "0.45");
-  }
-  paintUrgency();
-  buttons.forEach((b) => {
-    b.onclick = () => { urgency = b.dataset.u; paintUrgency(); };
-  });
-  document.getElementById("refillToggle").onclick = () => {
-    refillOn = !refillOn;
-    document.getElementById("refillCircle").classList.toggle("on", refillOn);
-    document.getElementById("refillFields").classList.toggle("show", refillOn);
-  };
-  document.getElementById("submitTaskBtn").onclick = () => {
-    const note = document.getElementById("noteInput").value.trim();
-    if (!note) return;
-    const tasks = currentTasks();
-    const newTask = {
-      id: uid(),
-      note,
-      urgency,
-      refillEnabled: refillOn,
-      refillIdNumber: refillOn ? document.getElementById("refillId").value.trim() : "",
-      refillPhone: refillOn ? document.getElementById("refillPhone").value.trim() : "",
-      status: getActiveTask() ? "open" : "active",
-      createdAt: new Date().toISOString(),
-      parkedAt: null,
-      completedAt: null,
-    };
-    tasks.push(newTask);
-    saveStore();
+  document.getElementById("addCustomDistCat").onclick = () => {
+    const name = prompt("اسم الفئة الجديدة:");
+    if (!name || !name.trim()) return;
+    const key = "c_" + uid();
+    state.distractionCategories.push({ key, label: "✳️ " + name.trim() });
+    saveState();
     closeSheet();
-    renderAll();
+    onPick(key);
   };
-  document.getElementById("closeAddSheet").onclick = closeSheet;
-  document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
+  document.getElementById("cancelDistSheet").onclick = closeSheet;
 }
 
-document.getElementById("taskSearchBox").oninput = (e) => { taskFilterText = e.target.value; renderLists(); };
-document.getElementById("exportTasksBtn").onclick = () => {
-  const tasks = currentTasks();
-  downloadCSV(
-    "tasks.csv",
-    ["note", "urgency", "status", "refillEnabled", "refillIdNumber", "refillPhone", "createdAt", "completedAt"],
-    tasks.map((t) => ({
-      note: t.note, urgency: t.urgency, status: t.status, refillEnabled: t.refillEnabled ? "نعم" : "لا",
-      refillIdNumber: t.refillIdNumber || "", refillPhone: t.refillPhone || "",
-      createdAt: t.createdAt, completedAt: t.completedAt || "",
-    }))
-  );
-};
-
-// ============ Panic Mode ============
-document.getElementById("panicBtn").onclick = () => {
-  const tasks = currentTasks();
-  const order = { now: 0, next: 1, later: 2 };
-  const active = getActiveTask();
-  const openOnes = tasks.filter((t) => t.status === "open" || t.status === "park" || (t.status === "active"));
-  if (openOnes.length === 0) return;
-  openOnes.sort((a, b) => order[a.urgency] - order[b.urgency]);
-  const winner = openOnes[0];
-  const now = new Date().toISOString();
-  openOnes.forEach((t) => {
-    if (t.id === winner.id) {
-      t.status = "active";
-    } else if (t.status !== "park") {
-      t.status = "park";
-      t.parkedAt = now;
+/* ============================== منطق جلسة التركيز ============================== */
+function startFocusSession(minutes) {
+  state.activeSession = { id: uid(), plannedMin: minutes, startedAt: new Date().toISOString(), pausedAccumMs: 0, pausedAt: null, status: "running", distractions: [] };
+  saveState();
+  render();
+}
+function sessionElapsedMs(s) {
+  const now = s.status === "paused" ? new Date(s.pausedAt).getTime() : Date.now();
+  return now - new Date(s.startedAt).getTime() - (s.pausedAccumMs || 0);
+}
+function toggleSessionPause() {
+  const s = state.activeSession; if (!s) return;
+  if (s.status === "running") { s.status = "paused"; s.pausedAt = new Date().toISOString(); }
+  else { s.pausedAccumMs = (s.pausedAccumMs || 0) + (Date.now() - new Date(s.pausedAt).getTime()); s.pausedAt = null; s.status = "running"; }
+  saveState(); render();
+}
+function finishSession(completed) {
+  const s = state.activeSession; if (!s) return;
+  const endedAt = new Date().toISOString();
+  const actualMin = Math.max(0, Math.round(sessionElapsedMs(s) / 60000));
+  const finished = { id: s.id, plannedMin: s.plannedMin, startedAt: s.startedAt, endedAt, actualMin, completed, distractions: s.distractions };
+  state.sessions.push(finished);
+  state.activeSession = null;
+  saveState();
+  showSessionSummary(finished);
+}
+function showSessionSummary(s) {
+  const counts = countBy(s.distractions, "key");
+  const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  const score = s.completed ? Math.max(0, 100 - s.distractions.length * 12) : Math.max(0, 60 - s.distractions.length * 12);
+  openSheet(`
+    <h3>${s.completed ? "خلصت الجلسة 🎉" : "الجلسة اتوقفت"}</h3>
+    <div class="sheet-sub">كده تسجّل عندك في السجل</div>
+    <div class="kv-row"><span class="kv-label">مدة التركيز الفعلية</span><span class="kv-val">${fmtMin(s.actualMin)}</span></div>
+    <div class="kv-row"><span class="kv-label">عدد مرات التشتت</span><span class="kv-val">${s.distractions.length}</span></div>
+    <div class="kv-row"><span class="kv-label">أكتر تشتيت</span><span class="kv-val">${top ? categoryLabel(top[0]) : "—"}</span></div>
+    <div class="kv-row"><span class="kv-label">تقييم الجلسة</span><span class="kv-val">${score}/100</span></div>
+    <button class="btn-primary" id="closeSummaryBtn" style="margin-top:14px;">تمام</button>
+  `);
+  document.getElementById("closeSummaryBtn").onclick = () => { closeSheet(); render(); };
+  render();
+}
+function startTimerLoop() {
+  if (timerInterval) return;
+  timerInterval = setInterval(() => {
+    const s = state.activeSession;
+    if (!s) return;
+    if (s.status === "running") {
+      const remaining = s.plannedMin * 60000 - sessionElapsedMs(s);
+      if (remaining <= 0) { finishSession(true); return; }
     }
-  });
-  saveStore();
-  renderAll();
-};
-
-// تحديث دوري لألوان Park (بتتغير مع الوقت) لو الصفحة فاتحة فترة طويلة
-setInterval(renderLists, 60 * 1000);
-
-renderAll();
-
-// ============ Tabs (المهام / الإداريات) ============
-document.getElementById("tabTasksBtn").onclick = () => showPage("tasks");
-document.getElementById("tabManagerBtn").onclick = () => showPage("manager");
-document.getElementById("tabCategoryBtn").onclick = () => showPage("category");
-
-function showPage(page) {
-  document.getElementById("tasksPage").style.display = page === "tasks" ? "" : "none";
-  document.getElementById("managerPage").style.display = page === "manager" ? "" : "none";
-  document.getElementById("categoryPage").style.display = page === "category" ? "" : "none";
-  document.getElementById("tabTasksBtn").classList.toggle("active", page === "tasks");
-  document.getElementById("tabManagerBtn").classList.toggle("active", page === "manager");
-  document.getElementById("tabCategoryBtn").classList.toggle("active", page === "category");
-  if (page === "manager") { managerView = { name: "grid" }; renderManager(); }
-  if (page === "category") renderCategoryPage();
+    if (currentTab === "focus") updateTimerDOM();
+  }, 1000);
 }
-
-// ============ Category (تقسيم الأصناف KPI حسب الكاتيجوري/الساب كاتيجوري) ============
-let categoryView = { name: "stock" }; // stock | stockDetail | sales | salesDetail
-
-function parseCategoryRows(rows) {
-  if (!rows.length) return { items: [], headers: [] };
-  const headers = Object.keys(rows[0]);
-  const codeCol = findCol(headers, ["MaterialNumber", "MaterialNo", "Material No", "Material Number", "Code", "Item Code", "ItemCode", "SKU", "كود"]);
-  const catCol = findCol(headers, ["category", "Category", "كاتيجوري"]);
-  const subCol = findCol(headers, ["sub category", "subcategory", "Sub Category", "ساب كاتيجوري"]);
-  const items = rows
-    .map((r) => ({ code: normalizeCode(r[codeCol]), category: String(r[catCol] || "").trim(), subCategory: String(r[subCol] || "").trim() }))
-    .filter((r) => r.code && r.category);
-  return { items, headers };
-}
-
-function monthlySeriesForItems(items, monthsCount) {
-  const dates = items.map((s) => new Date(s.date)).filter((d) => !isNaN(d));
-  if (!dates.length) return [];
-  const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
-  const months = [];
-  for (let i = monthsCount - 1; i >= 0; i--) {
-    const d = new Date(maxDate.getFullYear(), maxDate.getMonth() - i, 1);
-    months.push({ key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString("ar-EG", { month: "short", year: "numeric" }), qty: 0, money: 0 });
+function updateTimerDOM() {
+  const s = state.activeSession; if (!s) return;
+  const remaining = Math.max(0, s.plannedMin * 60000 - sessionElapsedMs(s));
+  const digitsEl = document.getElementById("timerDigits");
+  const ringEl = document.getElementById("timerRing");
+  if (digitsEl) digitsEl.textContent = fmtClock(remaining / 1000);
+  if (ringEl) {
+    const pct = Math.min(100, (1 - remaining / (s.plannedMin * 60000)) * 100);
+    ringEl.style.setProperty("--pct", pct);
   }
-  items.forEach((s) => {
-    const d = new Date(s.date);
-    if (isNaN(d)) return;
-    const key = `${d.getFullYear()}-${d.getMonth()}`;
-    const m = months.find((mo) => mo.key === key);
-    if (m) { m.qty += s.qty || 0; m.money += s.netPrice || 0; }
-  });
-  return months;
 }
 
-async function categoryCompute(mgr) {
-  if (!mgr.categoryFile) return null;
-  const catRows = (await idbGet(profileKey("categoryFile"))) || [];
-  const stockByCode = {};
-  ((await idbGet(profileKey("stock"))) || []).forEach((s) => { stockByCode[s.code] = s; });
-  const salesItems = (await idbGet(profileKey("sales"))) || [];
-  const rates = computeMonthlyRates(salesItems);
+/* ============================== شاشة: اليوم ============================== */
+function renderToday(app) {
+  const today = todayKey();
+  const mainFocus = state.mainFocusByDate[today] || "";
+  const todaySessions = sessionsInKeys([today]);
+  const activeToday = state.activeSession && dateKeyFromISO(state.activeSession.startedAt) === today ? state.activeSession : null;
+  const activeMinutes = activeToday ? sessionElapsedMs(activeToday) / 60000 : 0;
+  const focusMinutesToday = todaySessions.reduce((a, s) => a + sessionActualMin(s), 0) + activeMinutes;
+  const distToday = allDistractionEventsInKeys([today]).length;
+  const score = computeFocusScore([today]);
+  const energyToday = state.energyLogs[today];
+  const habitsToday = state.habits.slice(0, 5);
 
-  const groups = {};
-  catRows.forEach((r) => {
-    if (!groups[r.category]) groups[r.category] = [];
-    groups[r.category].push(r);
-  });
+  const quickChips = [
+    { key: "whatsapp", label: "💬 واتساب" },
+    { key: "phone", label: "📱 الهاتف" },
+    { key: "people", label: "🗣 أشخاص" },
+    { key: "thoughts", label: "💭 أفكار" },
+    { key: "other", label: "✳️ حاجة تانية" },
+  ];
 
-  const catList = Object.keys(groups)
-    .map((name) => {
-      const rows = groups[name];
-      const total = rows.length;
-      const covered = rows.filter((r) => stockByCode[r.code] && stockByCode[r.code].balance > 0).length;
-      const pct = total ? (covered / total) * 100 : 0;
-      const rateSum = rows.reduce((sum, r) => sum + (rates[r.code] || 0), 0);
-      return { name, rows, total, covered, pct, rateSum };
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
+  app.innerHTML = `
+    <div class="greeting">${greetingWord()}${state.userName ? "، " + escapeHtml(state.userName) : ""}</div>
+    <div class="greeting-sub">إيه أهم حاجة عايز تركز عليها النهاردة؟</div>
 
-  return { catList, stockByCode, salesItems, rates };
-}
-
-function subGroupBreakdown(rows, stockByCode) {
-  const subs = {};
-  rows.forEach((r) => {
-    const key = r.subCategory || "(بدون ساب كاتيجوري)";
-    if (!subs[key]) subs[key] = [];
-    subs[key].push(r);
-  });
-  return Object.keys(subs)
-    .map((name) => {
-      const subRows = subs[name];
-      const total = subRows.length;
-      const covered = subRows.filter((r) => stockByCode[r.code] && stockByCode[r.code].balance > 0).length;
-      return { name, total, covered, pct: total ? (covered / total) * 100 : 0 };
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
-}
-
-async function renderCategoryPage() {
-  const el = document.getElementById("categoryContainer");
-  const mgr = currentManager();
-  el.innerHTML = `<div class="section-label">Category</div><p class="empty">جاري تحميل البيانات...</p>`;
-  const data = await categoryCompute(mgr);
-  el.innerHTML = `
-    <div class="section-label">Category</div>
-    <div class="mgr-list-item">
-      <div class="row2">ملف الأصناف بالكاتيجوري (كود + كاتيجوري + ساب كاتيجوري): ${mgr.categoryFile ? `محدّث ${new Date(mgr.categoryFile.updatedAt).toLocaleString("ar-EG")} (${mgr.categoryFile.count} صف)` : "لسه ماترفعش"}</div>
-      <input type="file" id="categoryFileInput" accept=".xlsx,.xls,.csv" style="margin-top:6px;" />
+    <div class="card">
+      <div class="main-focus-label">التركيز الرئيسي للنهاردة</div>
+      <textarea class="main-focus-input" id="mainFocusInput" rows="2" placeholder="مثلاً: اخلص تقرير المبيعات">${escapeHtml(mainFocus)}</textarea>
     </div>
-    <p style="font-size:12px; color:var(--muted);">بيستخدم نفس ملفي Stock وSales اللي مرفوعين في Stock Manager - مش محتاج يترفعوا تاني هنا.</p>
-    <p id="catStatus" style="font-size:13px; color:var(--muted); white-space:pre-wrap;"></p>
-    <div class="urgency-row"><button id="catTabStock" style="flex:1;">Stock</button><button id="catTabSales" style="flex:1;">Sales</button></div>
-    <div id="catBody"></div>
+
+    <div class="stat-row" style="margin-bottom:14px;">
+      <div class="stat-chip" id="goFocusChip">
+        <div class="stat-val">${activeToday ? "⏱" : "▶️"}</div>
+        <div class="stat-lbl">${activeToday ? "فيه جلسة شغالة" : "ابدأ تركيز"}</div>
+      </div>
+      <div class="stat-chip" id="goEnergyChip">
+        <div class="stat-val">${energyToday ? energyToday.energy + "/١٠" : "—"}</div>
+        <div class="stat-lbl">الطاقة النهاردة</div>
+      </div>
+      <div class="stat-chip">
+        <div class="stat-val">${score}</div>
+        <div class="stat-lbl">درجة التركيز</div>
+      </div>
+    </div>
+
+    <div class="section-title">تسجيل سريع للتشتيت</div>
+    <div class="chip-row">
+      ${quickChips.map((c) => `<button class="chip" data-qkey="${c.key}">${c.label}</button>`).join("")}
+    </div>
+
+    <div class="section-title">عادات النهاردة</div>
+    <div class="card">
+      ${habitsToday.length === 0
+        ? `<div class="list-empty">لسه معملتش عادات. من تبويب "عادات" تقدر تضيف واحدة.</div>`
+        : habitsToday.map((h) => habitRowHtml(h, today)).join("")}
+    </div>
+
+    <div class="section-title">ملخص اليوم</div>
+    <div class="card">
+      <div class="kv-row"><span class="kv-label">وقت التركيز</span><span class="kv-val">${fmtMin(focusMinutesToday)}</span></div>
+      <div class="kv-row"><span class="kv-label">جلسات تركيز</span><span class="kv-val">${todaySessions.length + (activeToday ? 1 : 0)}</span></div>
+      <div class="kv-row"><span class="kv-label">مرات التشتت</span><span class="kv-val">${distToday}</span></div>
+    </div>
   `;
-  document.getElementById("categoryFileInput").onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const statusEl = document.getElementById("catStatus");
-    statusEl.textContent = "جاري قراءة ملف الكاتيجوري...";
-    try {
-      const rows = await readExcelFile(file);
-      const { items, headers } = parseCategoryRows(rows);
-      if (items.length === 0) {
-        statusEl.textContent = `مقدرتش أعرف الأعمدة صح. الأعمدة اللي في الملف: ${headers.join(", ")}\nابعتلي الأسماء دي عشان أظبط الكود.`;
-        return;
-      }
-      await idbSet(profileKey("categoryFile"), items);
-      mgr.categoryFile = { updatedAt: new Date().toISOString(), count: items.length };
-      saveStore();
-      renderCategoryPage();
-    } catch (err) {
-      statusEl.textContent = "حصل خطأ: " + err.message;
-    }
-  };
-  document.getElementById("catTabStock").className = categoryView.name.startsWith("stock") ? "sel-now" : "";
-  document.getElementById("catTabSales").className = categoryView.name.startsWith("sales") ? "sel-now" : "";
-  document.getElementById("catTabStock").onclick = () => { categoryView = { name: "stock" }; renderCategoryPage(); };
-  document.getElementById("catTabSales").onclick = () => { categoryView = { name: "sales" }; renderCategoryPage(); };
 
-  const body = document.getElementById("catBody");
-  if (!data) { body.innerHTML = `<p class="empty">ارفع ملف الكاتيجوري الأول عشان يظهر التحليل.</p>`; return; }
+  const mfInput = document.getElementById("mainFocusInput");
+  mfInput.addEventListener("input", () => { state.mainFocusByDate[today] = mfInput.value; saveState(); });
 
-  if (categoryView.name === "stock") {
-    body.innerHTML = data.catList
-      .map(
-        (c) => `
-      <div class="mgr-list-item" data-cat="${escapeHtml(c.name)}">
-        <div class="row1"><span>${escapeHtml(c.name)}</span><span>${c.pct.toFixed(0)}%</span></div>
-        <div class="row2">${c.total} صنف - ${c.covered} مرصود</div>
-      </div>`
-      )
-      .join("");
-    body.querySelectorAll("[data-cat]").forEach((row) => {
-      row.onclick = () => { categoryView = { name: "stockDetail", cat: row.dataset.cat }; renderCategoryPage(); };
-    });
-  } else if (categoryView.name === "stockDetail") {
-    const cat = data.catList.find((c) => c.name === categoryView.cat);
-    const subs = subGroupBreakdown(cat.rows, data.stockByCode);
-    body.innerHTML =
-      `<button class="mgr-back" id="catBackBtn">‹ رجوع لكل الكاتيجوريز</button><div class="section-label">${escapeHtml(cat.name)}</div>` +
-      subs.map((s) => `<div class="mgr-list-item"><div class="row1"><span>${escapeHtml(s.name)}</span><span>${s.pct.toFixed(0)}%</span></div><div class="row2">${s.total} صنف - ${s.covered} مرصود</div></div>`).join("");
-    document.getElementById("catBackBtn").onclick = () => { categoryView = { name: "stock" }; renderCategoryPage(); };
-  } else if (categoryView.name === "sales") {
-    body.innerHTML = data.catList
-      .map(
-        (c) => `
-      <div class="mgr-list-item" data-cat="${escapeHtml(c.name)}">
-        <div class="row1"><span>${escapeHtml(c.name)}</span></div>
-        <div class="row2">${c.covered} صنف برصيد - معدل بيع شهري إجمالي: ${c.rateSum.toFixed(1)}</div>
-      </div>`
-      )
-      .join("");
-    body.querySelectorAll("[data-cat]").forEach((row) => {
-      row.onclick = () => { categoryView = { name: "salesDetail", cat: row.dataset.cat }; renderCategoryPage(); };
-    });
-  } else if (categoryView.name === "salesDetail") {
-    const cat = data.catList.find((c) => c.name === categoryView.cat);
-    const codes = new Set(cat.rows.map((r) => r.code));
-    const relevantSales = data.salesItems.filter((s) => codes.has(s.code));
-    // شارت الساب كاتيجوري: مجموع كمية وفلوس آخر 3 شهور
-    const dates = relevantSales.map((s) => new Date(s.date)).filter((d) => !isNaN(d));
-    let subTotals = [];
-    if (dates.length) {
-      const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
-      const cutoff = new Date(maxDate); cutoff.setMonth(cutoff.getMonth() - 3);
-      const codeToSub = {}; cat.rows.forEach((r) => { codeToSub[r.code] = r.subCategory || "(بدون)"; });
-      const totals = {};
-      relevantSales.forEach((s) => {
-        const d = new Date(s.date);
-        if (isNaN(d) || d.getTime() < cutoff.getTime()) return;
-        const sub = codeToSub[s.code];
-        if (!totals[sub]) totals[sub] = { name: sub, qty: 0, money: 0 };
-        totals[sub].qty += s.qty || 0;
-        totals[sub].money += s.netPrice || 0;
-      });
-      subTotals = Object.values(totals).sort((a, b) => b.money - a.money);
-    }
-    const catMonths = monthlySeriesForItems(relevantSales, 5);
-    const barsHtml = (items, valueKey, labelKey) => {
-      const max = Math.max(...items.map((i) => i[valueKey]), 1);
-      return `<div style="display:flex; align-items:flex-end; gap:8px; height:150px; padding:10px 0; overflow-x:auto;">${items
-        .map(
-          (i) => `
-        <div style="min-width:50px; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;">
-          <div style="font-size:10px;">${Math.round(i[valueKey])}</div>
-          <div style="width:100%; background:linear-gradient(180deg, var(--turq), var(--navy-2)); border-radius:6px 6px 0 0; height:${Math.max((i[valueKey] / max) * 110, 2)}px;"></div>
-          <div style="font-size:9px; color:var(--muted); margin-top:4px; text-align:center;">${escapeHtml(String(i[labelKey]))}</div>
-        </div>`
-        )
-        .join("")}</div>`;
+  document.getElementById("goFocusChip").onclick = () => switchTab("focus");
+  document.getElementById("goEnergyChip").onclick = () => switchTab("energy");
+
+  document.querySelectorAll("[data-qkey]").forEach((btn) => {
+    btn.onclick = () => {
+      state.standaloneLogs.push({ id: uid(), key: btn.dataset.qkey, at: new Date().toISOString() });
+      saveState();
+      toast("اتسجل — " + categoryLabel(btn.dataset.qkey));
+      render();
     };
-    body.innerHTML = `
-      <button class="mgr-back" id="catBackBtn">‹ رجوع لكل الكاتيجوريز</button>
-      <div class="section-label">${escapeHtml(cat.name)} - مبيعات الساب كاتيجوري (كمية، آخر 3 شهور)</div>
-      ${subTotals.length ? barsHtml(subTotals, "qty", "name") : `<p class="empty">مفيش مبيعات كفاية.</p>`}
-      <div class="section-label">مبيعات ${escapeHtml(cat.name)} نفسها (فلوس، آخر 5 شهور)</div>
-      ${catMonths.length ? barsHtml(catMonths, "money", "label") : `<p class="empty">مفيش مبيعات كفاية.</p>`}
+  });
+
+  wireHabitRows(today);
+}
+
+function habitRowHtml(h, key) {
+  const done = habitDone(h, key);
+  const streak = habitStreak(h);
+  return `
+    <div class="habit-row">
+      <button class="habit-check ${done ? "done" : ""}" data-habit="${h.id}">${done ? "✓" : ""}</button>
+      <div style="flex:1;">
+        <div class="habit-name ${done ? "done-text" : ""}">${escapeHtml(h.name)}</div>
+        ${h.note ? `<div class="habit-meta">${escapeHtml(h.note)}</div>` : ""}
+      </div>
+      ${streak > 0 ? `<div class="habit-streak">🔥 ${streak}</div>` : ""}
+    </div>
+  `;
+}
+function wireHabitRows(key) {
+  document.querySelectorAll("[data-habit]").forEach((btn) => {
+    btn.onclick = () => {
+      const h = state.habits.find((x) => x.id === btn.dataset.habit);
+      if (!h) return;
+      if (habitDone(h, key)) delete h.logs[key]; else h.logs[key] = true;
+      saveState(); render();
+    };
+  });
+}
+
+/* ============================== شاشة: تركيز ============================== */
+function renderFocus(app) {
+  const s = state.activeSession;
+  if (!s) {
+    const today = todayKey();
+    const mainFocus = state.mainFocusByDate[today];
+    app.innerHTML = `
+      ${mainFocus ? `<div class="card" style="background:var(--sage-tint); border-color:var(--sage);"><div class="main-focus-label">التركيز على</div><div style="font-weight:700; font-size:15px;">${escapeHtml(mainFocus)}</div></div>` : ""}
+      <div class="section-title">ابدأ جلسة تركيز</div>
+      <div class="duration-grid">
+        <button class="duration-btn" data-min="15"><div class="dmin">١٥</div><div class="dlbl">دقيقة</div></button>
+        <button class="duration-btn" data-min="25"><div class="dmin">٢٥</div><div class="dlbl">دقيقة</div></button>
+        <button class="duration-btn" data-min="45"><div class="dmin">٤٥</div><div class="dlbl">دقيقة</div></button>
+        <button class="duration-btn" data-min="60"><div class="dmin">٦٠</div><div class="dlbl">دقيقة</div></button>
+      </div>
     `;
-    document.getElementById("catBackBtn").onclick = () => { categoryView = { name: "sales" }; renderCategoryPage(); };
+    document.querySelectorAll(".duration-btn").forEach((b) => { b.onclick = () => startFocusSession(Number(b.dataset.min)); });
+    return;
   }
-}
 
-// ============ الإداريات (روابط / فروع / علاقات / عملاء عروض / مستشفيات / تعاميم / الملفات / تذكيرات) ============
-function currentManager() {
-  if (!store.currentProfileId) return null;
-  if (!store.managerByProfile) store.managerByProfile = {};
-  if (!store.managerByProfile[store.currentProfileId]) {
-    store.managerByProfile[store.currentProfileId] = {
-      links: [], branches: [], contacts: [], offerClients: [],
-      hospitals: [], hospitalDueEntries: [], circulars: [], files: [], reminders: [],
-      stock: null, prevStock: null, sales: null, specificCodes: [], specialFile: null, categoryFile: null,
-    };
-  }
-  const mgr = store.managerByProfile[store.currentProfileId];
-  if (mgr.stock === undefined) mgr.stock = null;
-  if (mgr.prevStock === undefined) mgr.prevStock = null;
-  if (mgr.sales === undefined) mgr.sales = null;
-  if (!mgr.specificCodes) mgr.specificCodes = [];
-  if (mgr.specialFile === undefined) mgr.specialFile = null;
-  if (mgr.categoryFile === undefined) mgr.categoryFile = null;
-  return mgr;
-}
-
-const SIMPLE_SECTIONS = {
-  links: {
-    title: "روابط", icon: "🔗",
-    fields: [
-      { key: "title", label: "العنوان" },
-      { key: "content", label: "الرابط" },
-      { key: "username", label: "يوزر (اختياري)" },
-      { key: "password", label: "باسورد (اختياري)" },
-    ],
-    subtitle: (i) => i.content || "",
-  },
-  branches: {
-    title: "أرقام الفروع", icon: "🏬",
-    fields: [
-      { key: "branchNumber", label: "رقم الفرع" },
-      { key: "phone", label: "رقم الجوال" },
-      { key: "city", label: "المدينة" },
-      { key: "mapLink", label: "لينك جوجل ماب (اختياري)" },
-      { key: "addressDetail", label: "تفاصيل العنوان (اختياري)" },
-    ],
-    subtitle: (i) => [i.city, i.phone].filter(Boolean).join(" · "),
-  },
-  contacts: {
-    title: "العلاقات", icon: "👥",
-    fields: [
-      { key: "name", label: "الاسم" },
-      { key: "profession", label: "المهنة" },
-      { key: "phone", label: "رقم الجوال" },
-    ],
-    subtitle: (i) => [i.profession, i.phone].filter(Boolean).join(" · "),
-  },
-  offerClients: {
-    title: "عملاء عروض", icon: "🏷️",
-    fields: [
-      { key: "itemCode", label: "كود الصنف" },
-      { key: "itemName", label: "اسم الصنف" },
-      { key: "phone", label: "رقم جوال العميل" },
-    ],
-    subtitle: (i) => [i.itemCode, i.phone].filter(Boolean).join(" · "),
-  },
-  reminders: {
-    title: "التذكيرات (مهام دورية)", icon: "🔔",
-    fields: [
-      { key: "text", label: "نص التذكير" },
-      { key: "frequency", label: "التكرار (يومي / أسبوعي / شهري)" },
-    ],
-    subtitle: (i) => i.frequency || "",
-  },
-};
-
-let managerView = { name: "grid" };
-
-function renderManager() {
-  const el = document.getElementById("managerContainer");
-  if (managerView.name === "grid") return renderManagerGrid(el);
-  if (managerView.name === "simple") return renderSimpleSection(el, managerView.key);
-  if (managerView.name === "hospitals") return renderHospitalsList(el);
-  if (managerView.name === "hospitalDetail") return renderHospitalDetail(el, managerView.id);
-  if (managerView.name === "circulars") return renderCirculars(el);
-  if (managerView.name === "files") return renderFiles(el);
-  if (managerView.name === "stockManager") return renderStockManager(el);
-}
-
-const MANAGER_CARDS = [
-  { key: "links", type: "simple", icon: "🔗", title: "روابط" },
-  { key: "branches", type: "simple", icon: "🏬", title: "أرقام الفروع" },
-  { key: "contacts", type: "simple", icon: "👥", title: "العلاقات" },
-  { key: "offerClients", type: "simple", icon: "🏷️", title: "عملاء عروض" },
-  { key: "hospitals", type: "hospitals", icon: "🏥", title: "مستحقات المستشفيات" },
-  { key: "reminders", type: "simple", icon: "🔔", title: "التذكيرات" },
-  { key: "circulars", type: "circulars", icon: "📋", title: "تعاميم" },
-  { key: "files", type: "files", icon: "📁", title: "الملفات" },
-  { key: "stockManager", type: "stockManager", icon: "📦", title: "Stock Manager" },
-];
-
-function renderManagerGrid(el) {
-  el.innerHTML = `<div class="section-label">الإداريات</div><div class="mgr-grid" id="mgrGrid"></div>`;
-  const grid = document.getElementById("mgrGrid");
-  grid.innerHTML = MANAGER_CARDS.map(
-    (c) => `<div class="mgr-card" data-key="${c.key}"><span class="mgr-icon">${c.icon}</span>${c.title}</div>`
-  ).join("");
-  grid.querySelectorAll("[data-key]").forEach((card) => {
-    card.onclick = () => {
-      const conf = MANAGER_CARDS.find((c) => c.key === card.dataset.key);
-      if (conf.type === "simple") managerView = { name: "simple", key: conf.key };
-      else if (conf.type === "hospitals") managerView = { name: "hospitals" };
-      else if (conf.type === "circulars") managerView = { name: "circulars" };
-      else if (conf.type === "files") managerView = { name: "files" };
-      else if (conf.type === "stockManager") managerView = { name: "stockManager", tab: "urgent" };
-      renderManager();
-    };
-  });
-}
-
-function backToGrid() { managerView = { name: "grid" }; renderManager(); }
-
-// ---- أقسام بسيطة (روابط / فروع / علاقات / عملاء عروض / تذكيرات) ----
-function renderSimpleSection(el, key, filterText) {
-  const conf = SIMPLE_SECTIONS[key];
-  const mgr = currentManager();
-  const items = mgr[key] || [];
-  const q = (filterText || "").trim().toLowerCase();
-  const filtered = q
-    ? items.filter((i) => conf.fields.some((f) => (i[f.key] || "").toLowerCase().includes(q)))
-    : items;
-  el.innerHTML = `
-    <button class="mgr-back" id="mgrBack">‹ رجوع</button>
-    <div class="section-label">${conf.title}</div>
-    <input class="mgr-search" id="mgrSearch" placeholder="بحث..." value="${escapeHtml(filterText || "")}" />
-    <div style="display:flex; gap:8px;">
-      <button class="mgr-add-btn" id="mgrAddBtn" style="flex:1;">+ إضافة</button>
-      <button class="mgr-add-btn" id="mgrExportBtn" style="flex:1;">📤 تصدير</button>
-    </div>
-    <div id="mgrListWrap"></div>
-  `;
-  const listWrap = document.getElementById("mgrListWrap");
-  listWrap.innerHTML = filtered.length === 0
-    ? `<p class="empty">مفيش عناصر لسه.</p>`
-    : filtered
-        .map(
-          (i) => `
-      <div class="mgr-list-item" data-id="${i.id}">
-        <div class="row1"><span>${escapeHtml(i[conf.fields[0].key] || "")}</span><span class="del-x" data-del="${i.id}">✕</span></div>
-        <div class="row2">${escapeHtml(conf.subtitle(i))}</div>
-      </div>`
-        )
-        .join("");
-  listWrap.querySelectorAll("[data-del]").forEach((btn) => {
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      if (!confirm("متأكد إنك عايز تمسحه؟")) return;
-      mgr[key] = mgr[key].filter((i) => i.id !== btn.dataset.del);
-      saveStore();
-      renderSimpleSection(el, key, document.getElementById("mgrSearch").value);
-    };
-  });
-  document.getElementById("mgrBack").onclick = backToGrid;
-  document.getElementById("mgrSearch").oninput = (e) => renderSimpleSection(el, key, e.target.value);
-  document.getElementById("mgrAddBtn").onclick = () => openSimpleAddSheet(key, el);
-  document.getElementById("mgrExportBtn").onclick = () => {
-    downloadCSV(key + ".csv", conf.fields.map((f) => f.key), filtered);
-  };
-}
-
-function openSimpleAddSheet(key, el) {
-  const conf = SIMPLE_SECTIONS[key];
-  const sheetRoot = document.getElementById("sheetRoot");
-  sheetRoot.innerHTML = `
-    <div class="sheet-overlay" id="overlay">
-      <div class="sheet">
-        <h3>إضافة - ${conf.title}</h3>
-        ${conf.fields.map((f) => `<input type="text" id="f_${f.key}" placeholder="${f.label}" />`).join("")}
-        <button class="sheet-btn" id="saveSimpleBtn">حفظ</button>
-        <button class="cancel-btn" id="closeSimpleSheet">إلغاء</button>
-      </div>
-    </div>`;
-  document.getElementById("closeSimpleSheet").onclick = closeSheet;
-  document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
-  document.getElementById("saveSimpleBtn").onclick = () => {
-    const item = { id: uid(), createdAt: new Date().toISOString() };
-    conf.fields.forEach((f) => { item[f.key] = document.getElementById("f_" + f.key).value.trim(); });
-    if (!item[conf.fields[0].key]) return;
-    const mgr = currentManager();
-    mgr[key].push(item);
-    saveStore();
-    closeSheet();
-    renderSimpleSection(el, key);
-  };
-}
-
-// ---- مستحقات المستشفيات (مستشفى -> شهور/مستحقات) ----
-function renderHospitalsList(el, filterText) {
-  const mgr = currentManager();
-  const q = (filterText || "").trim().toLowerCase();
-  const filtered = q ? mgr.hospitals.filter((h) => (h.name || "").toLowerCase().includes(q) || (h.contractor || "").toLowerCase().includes(q)) : mgr.hospitals;
-  el.innerHTML = `
-    <button class="mgr-back" id="mgrBack">‹ رجوع</button>
-    <div class="section-label">مستحقات المستشفيات</div>
-    <input class="mgr-search" id="hospSearch" placeholder="بحث..." value="${escapeHtml(filterText || "")}" />
-    <div style="display:flex; gap:8px;">
-      <button class="mgr-add-btn" id="mgrAddHospBtn" style="flex:1;">+ إضافة مستشفى</button>
-      <button class="mgr-add-btn" id="exportHospBtn" style="flex:1;">📤 تصدير</button>
-    </div>
-    <div id="hospListWrap"></div>
-  `;
-  document.getElementById("hospListWrap").innerHTML = filtered.length === 0
-    ? `<p class="empty">مفيش مستشفيات لسه.</p>`
-    : filtered
-        .map(
-          (h) => `
-      <div class="mgr-list-item" data-id="${h.id}">
-        <div class="row1"><span>${escapeHtml(h.name)}</span><span class="del-x" data-del="${h.id}">✕</span></div>
-        <div class="row2">${escapeHtml(h.contractor || "")}</div>
-      </div>`
-        )
-        .join("");
-  document.getElementById("hospSearch").oninput = (e) => renderHospitalsList(el, e.target.value);
-  document.getElementById("exportHospBtn").onclick = () => {
-    downloadCSV("hospitals.csv", ["name", "contractor"], filtered);
-  };
-  document.querySelectorAll("#hospListWrap [data-id]").forEach((row) => {
-    row.onclick = (e) => {
-      if (e.target.dataset.del) return;
-      managerView = { name: "hospitalDetail", id: row.dataset.id };
-      renderManager();
-    };
-  });
-  document.querySelectorAll("#hospListWrap [data-del]").forEach((btn) => {
-    btn.onclick = (e) => {
-      e.stopPropagation();
-      if (!confirm("هتتمسح كل بيانات المستشفى ده - متأكد؟")) return;
-      mgr.hospitals = mgr.hospitals.filter((h) => h.id !== btn.dataset.del);
-      mgr.hospitalDueEntries = mgr.hospitalDueEntries.filter((e2) => e2.hospitalId !== btn.dataset.del);
-      saveStore();
-      renderHospitalsList(el);
-    };
-  });
-  document.getElementById("mgrBack").onclick = backToGrid;
-  document.getElementById("mgrAddHospBtn").onclick = () => {
-    const sheetRoot = document.getElementById("sheetRoot");
-    sheetRoot.innerHTML = `
-      <div class="sheet-overlay" id="overlay">
-        <div class="sheet">
-          <h3>مستشفى جديد</h3>
-          <input type="text" id="hospName" placeholder="اسم المستشفى" />
-          <input type="text" id="hospContractor" placeholder="اسم المتعاقدين معاه" />
-          <button class="sheet-btn" id="saveHospBtn">حفظ</button>
-          <button class="cancel-btn" id="closeHospSheet">إلغاء</button>
-        </div>
-      </div>`;
-    document.getElementById("closeHospSheet").onclick = closeSheet;
-    document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
-    document.getElementById("saveHospBtn").onclick = () => {
-      const name = document.getElementById("hospName").value.trim();
-      if (!name) return;
-      mgr.hospitals.push({ id: uid(), name, contractor: document.getElementById("hospContractor").value.trim(), createdAt: new Date().toISOString() });
-      saveStore();
-      closeSheet();
-      renderHospitalsList(el);
-    };
-  };
-}
-
-function renderHospitalDetail(el, hospId) {
-  const mgr = currentManager();
-  const hosp = mgr.hospitals.find((h) => h.id === hospId);
-  if (!hosp) { managerView = { name: "hospitals" }; return renderManager(); }
-  const entries = mgr.hospitalDueEntries.filter((e2) => e2.hospitalId === hospId).sort((a, b) => (a.month < b.month ? 1 : -1));
-  el.innerHTML = `
-    <button class="mgr-back" id="mgrBack">‹ رجوع لكل المستشفيات</button>
-    <div class="section-label">${escapeHtml(hosp.name)} - ${escapeHtml(hosp.contractor || "")}</div>
-    <div style="display:flex; gap:8px;">
-      <button class="mgr-add-btn" id="addMonthBtn" style="flex:1;">+ إضافة شهر</button>
-      <button class="mgr-add-btn" id="exportMonthsBtn" style="flex:1;">📤 تصدير</button>
-    </div>
-    <div id="monthsWrap"></div>
-  `;
-  document.getElementById("monthsWrap").innerHTML = entries.length === 0
-    ? `<p class="empty">مفيش شهور لسه.</p>`
-    : entries
-        .map(
-          (e2) => `
-      <div class="mgr-list-item">
-        <div class="row1">
-          <span>${escapeHtml(e2.month)} - ${e2.amount ?? ""}</span>
-          <span style="display:flex; align-items:center; gap:10px;">
-            <span data-received="${e2.id}" style="cursor:pointer; width:18px; height:18px; border-radius:50%; display:inline-block; border:2px solid var(--green-ok); background:${e2.received ? "var(--green-ok)" : "#fff"}"></span>
-            <span class="del-x" data-delmonth="${e2.id}">✕</span>
-          </span>
-        </div>
-        <div class="row2">${e2.received ? "استلم" : "لسه ماستلمش"}</div>
-      </div>`
-        )
-        .join("");
-  document.querySelectorAll("[data-received]").forEach((dot) => {
-    dot.onclick = () => {
-      const entry = mgr.hospitalDueEntries.find((x) => x.id === dot.dataset.received);
-      entry.received = entry.received ? 0 : 1;
-      saveStore();
-      renderHospitalDetail(el, hospId);
-    };
-  });
-  document.querySelectorAll("[data-delmonth]").forEach((btn) => {
-    btn.onclick = () => {
-      if (!confirm("متأكد؟")) return;
-      mgr.hospitalDueEntries = mgr.hospitalDueEntries.filter((x) => x.id !== btn.dataset.delmonth);
-      saveStore();
-      renderHospitalDetail(el, hospId);
-    };
-  });
-  document.getElementById("mgrBack").onclick = () => { managerView = { name: "hospitals" }; renderManager(); };
-  document.getElementById("exportMonthsBtn").onclick = () => {
-    downloadCSV("hospital-months.csv", ["month", "amount", "received"], entries.map((e2) => ({ month: e2.month, amount: e2.amount, received: e2.received ? "استلم" : "لسه" })));
-  };
-  document.getElementById("addMonthBtn").onclick = () => {
-    const sheetRoot = document.getElementById("sheetRoot");
-    sheetRoot.innerHTML = `
-      <div class="sheet-overlay" id="overlay">
-        <div class="sheet">
-          <h3>إضافة شهر مستحق</h3>
-          <input type="text" id="monthName" placeholder="الشهر (مثال: سبتمبر 2026)" />
-          <input type="number" id="monthAmount" placeholder="قيمة المستحق" />
-          <button class="sheet-btn" id="saveMonthBtn">حفظ</button>
-          <button class="cancel-btn" id="closeMonthSheet">إلغاء</button>
-        </div>
-      </div>`;
-    document.getElementById("closeMonthSheet").onclick = closeSheet;
-    document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
-    document.getElementById("saveMonthBtn").onclick = () => {
-      const month = document.getElementById("monthName").value.trim();
-      if (!month) return;
-      mgr.hospitalDueEntries.push({
-        id: uid(), hospitalId: hospId, month,
-        amount: parseFloat(document.getElementById("monthAmount").value) || 0,
-        received: 0, createdAt: new Date().toISOString(),
-      });
-      saveStore();
-      closeSheet();
-      renderHospitalDetail(el, hospId);
-    };
-  };
-}
-
-// ---- تعاميم (نص + مرفق صورة/ملف كـ dataURL) ----
-function renderCirculars(el, filterText) {
-  const mgr = currentManager();
-  const q = (filterText || "").trim().toLowerCase();
-  el.innerHTML = `
-    <button class="mgr-back" id="mgrBack">‹ رجوع</button>
-    <div class="section-label">تعاميم</div>
-    <input class="mgr-search" id="circSearch" placeholder="بحث في النص..." value="${escapeHtml(filterText || "")}" />
-    <div style="display:flex; gap:8px;">
-      <button class="mgr-add-btn" id="addCircularBtn" style="flex:1;">+ إضافة تعميم</button>
-      <button class="mgr-add-btn" id="exportCircBtn" style="flex:1;">📤 تصدير</button>
-    </div>
-    <div id="circWrap"></div>
-  `;
-  let sorted = [...mgr.circulars].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-  if (q) sorted = sorted.filter((c) => (c.text || "").toLowerCase().includes(q));
-  document.getElementById("circSearch").oninput = (e) => renderCirculars(el, e.target.value);
-  document.getElementById("exportCircBtn").onclick = () => {
-    downloadCSV("circulars.csv", ["type", "text", "createdAt"], sorted.map((c) => ({ type: c.type === "insurance" ? "تأمين" : "إداري", text: c.text, createdAt: c.createdAt })));
-  };
-  document.getElementById("circWrap").innerHTML = sorted.length === 0
-    ? `<p class="empty">مفيش تعاميم لسه.</p>`
-    : sorted
-        .map(
-          (c) => `
-      <div class="mgr-list-item">
-        <div class="row1">
-          <span>${c.type === "insurance" ? "تعميم تأمين" : "تعميم إداري"}</span>
-          <span class="del-x" data-delcirc="${c.id}">✕</span>
-        </div>
-        <div class="row2">${escapeHtml(c.text || "")}</div>
-        <div class="row2">${new Date(c.createdAt).toLocaleDateString("ar-EG")} ${c.fileDataUrl ? `· <a class="file-download-link" href="${c.fileDataUrl}" download="${escapeHtml(c.fileName || "مرفق")}">تحميل المرفق</a>` : ""}</div>
-      </div>`
-        )
-        .join("");
-  document.querySelectorAll("[data-delcirc]").forEach((btn) => {
-    btn.onclick = () => {
-      if (!confirm("متأكد؟")) return;
-      mgr.circulars = mgr.circulars.filter((c) => c.id !== btn.dataset.delcirc);
-      saveStore();
-      renderCirculars(el);
-    };
-  });
-  document.getElementById("mgrBack").onclick = backToGrid;
-  document.getElementById("addCircularBtn").onclick = () => {
-    const sheetRoot = document.getElementById("sheetRoot");
-    sheetRoot.innerHTML = `
-      <div class="sheet-overlay" id="overlay">
-        <div class="sheet">
-          <h3>تعميم جديد</h3>
-          <div class="urgency-row">
-            <button data-t="admin" class="sel-now" style="flex:1">تعميم إداري</button>
-            <button data-t="insurance" class="sel-next" style="flex:1">تعميم تأمين</button>
+  const remaining = Math.max(0, s.plannedMin * 60000 - sessionElapsedMs(s));
+  const pct = Math.min(100, (1 - remaining / (s.plannedMin * 60000)) * 100);
+  app.innerHTML = `
+    <div class="card">
+      <div class="timer-wrap">
+        <div class="ring" id="timerRing" style="--pct:${pct}; width:180px; height:180px; background: conic-gradient(var(--sage) calc(var(--pct)*3.6deg), var(--line) 0deg);">
+          <div class="ring-inner">
+            <div class="timer-digits" id="timerDigits">${fmtClock(remaining / 1000)}</div>
+            <div class="timer-planned">${s.status === "paused" ? "متوقف مؤقتًا" : `من ${s.plannedMin} دقيقة`}</div>
           </div>
-          <textarea id="circText" rows="3" placeholder="نص التعميم"></textarea>
-          <input type="file" id="circFile" />
-          <button class="sheet-btn" id="saveCircBtn">حفظ</button>
-          <button class="cancel-btn" id="closeCircSheet">إلغاء</button>
         </div>
-      </div>`;
-    let type = "admin";
-    sheetRoot.querySelectorAll("[data-t]").forEach((b) => {
-      b.style.opacity = b.dataset.t === type ? "1" : "0.45";
-      b.onclick = () => { type = b.dataset.t; sheetRoot.querySelectorAll("[data-t]").forEach((x) => x.style.opacity = x.dataset.t === type ? "1" : "0.45"); };
+        <div class="timer-planned" style="margin-top:14px;">تشتتت ${s.distractions.length} مرة${s.distractions.length === 1 ? "" : "ات"} — الخطة ${s.plannedMin} دقيقة</div>
+        <div class="timer-actions">
+          <button class="btn-secondary" id="pauseBtn">${s.status === "paused" ? "▶️ استكمال" : "⏸ إيقاف مؤقت"}</button>
+          <button class="btn-secondary" id="distractedBtn">🌀 تشتت!</button>
+        </div>
+        <button class="btn-secondary btn-danger" id="stopBtn" style="margin-top:10px;">✅ إنهاء الجلسة</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("pauseBtn").onclick = toggleSessionPause;
+  document.getElementById("distractedBtn").onclick = () => {
+    openDistractionSheet((key) => {
+      state.activeSession.distractions.push({ key, at: new Date().toISOString() });
+      saveState(); render();
     });
-    document.getElementById("closeCircSheet").onclick = closeSheet;
-    document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
-    document.getElementById("saveCircBtn").onclick = () => {
-      const text = document.getElementById("circText").value.trim();
-      const fileInput = document.getElementById("circFile");
-      const finish = (dataUrl, fileName) => {
-        mgr.circulars.push({ id: uid(), type, text, fileDataUrl: dataUrl || null, fileName: fileName || null, createdAt: new Date().toISOString() });
-        saveStore();
-        closeSheet();
-        renderCirculars(el);
-      };
-      if (fileInput.files && fileInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = () => finish(reader.result, fileInput.files[0].name);
-        reader.readAsDataURL(fileInput.files[0]);
-      } else {
-        finish(null, null);
-      }
-    };
   };
+  document.getElementById("stopBtn").onclick = () => finishSession(remaining <= 500);
 }
 
-// ---- الملفات (رفع ملف باسم + تنزيل) ----
-function renderFiles(el, filterText) {
-  const mgr = currentManager();
-  const q = (filterText || "").trim().toLowerCase();
-  el.innerHTML = `
-    <button class="mgr-back" id="mgrBack">‹ رجوع</button>
-    <div class="section-label">الملفات</div>
-    <input class="mgr-search" id="filesSearch" placeholder="بحث بالاسم..." value="${escapeHtml(filterText || "")}" />
-    <div style="display:flex; gap:8px;">
-      <button class="mgr-add-btn" id="addFileBtn" style="flex:1;">+ إضافة ملف</button>
-      <button class="mgr-add-btn" id="exportFilesBtn" style="flex:1;">📤 تصدير القايمة</button>
-    </div>
-    <div id="filesWrap"></div>
-  `;
-  let sorted = [...mgr.files].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-  if (q) sorted = sorted.filter((f) => (f.name || "").toLowerCase().includes(q));
-  document.getElementById("filesSearch").oninput = (e) => renderFiles(el, e.target.value);
-  document.getElementById("exportFilesBtn").onclick = () => {
-    downloadCSV("files-list.csv", ["name", "originalName", "createdAt"], sorted);
-  };
-  document.getElementById("filesWrap").innerHTML = sorted.length === 0
-    ? `<p class="empty">مفيش ملفات لسه.</p>`
-    : sorted
-        .map(
-          (f) => `
-      <div class="mgr-list-item">
-        <div class="row1">
-          <span>${escapeHtml(f.name)}</span>
-          <span class="del-x" data-delfile="${f.id}">✕</span>
-        </div>
-        <div class="row2"><a class="file-download-link" href="${f.dataUrl}" download="${escapeHtml(f.originalName || f.name)}">تحميل</a> · ${new Date(f.createdAt).toLocaleDateString("ar-EG")}</div>
-      </div>`
-        )
-        .join("");
-  document.querySelectorAll("[data-delfile]").forEach((btn) => {
-    btn.onclick = () => {
-      if (!confirm("متأكد؟")) return;
-      mgr.files = mgr.files.filter((f) => f.id !== btn.dataset.delfile);
-      saveStore();
-      renderFiles(el);
-    };
-  });
-  document.getElementById("mgrBack").onclick = backToGrid;
-  document.getElementById("addFileBtn").onclick = () => {
-    const sheetRoot = document.getElementById("sheetRoot");
-    sheetRoot.innerHTML = `
-      <div class="sheet-overlay" id="overlay">
-        <div class="sheet">
-          <h3>إضافة ملف</h3>
-          <input type="text" id="fileName" placeholder="اسم الملف" />
-          <input type="file" id="fileInput" />
-          <button class="sheet-btn" id="saveFileBtn">حفظ</button>
-          <button class="cancel-btn" id="closeFileSheet">إلغاء</button>
-        </div>
-      </div>`;
-    document.getElementById("closeFileSheet").onclick = closeSheet;
-    document.getElementById("overlay").onclick = (e) => { if (e.target.id === "overlay") closeSheet(); };
-    document.getElementById("saveFileBtn").onclick = () => {
-      const name = document.getElementById("fileName").value.trim();
-      const fileInput = document.getElementById("fileInput");
-      if (!name || !fileInput.files[0]) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        mgr.files.push({ id: uid(), name, originalName: fileInput.files[0].name, dataUrl: reader.result, createdAt: new Date().toISOString() });
-        saveStore();
-        closeSheet();
-        renderFiles(el);
-      };
-      reader.readAsDataURL(fileInput.files[0]);
-    };
-  };
-}
+/* ============================== شاشة: تشتيت ============================== */
+function renderDistractions(app) {
+  const today = todayKey(), thisWeek = last7Keys(0), lastWeek = last7Keys(1);
+  const todayEvents = allDistractionEventsInKeys([today]);
+  const weekEvents = allDistractionEventsInKeys(thisWeek);
+  const lastWeekEvents = allDistractionEventsInKeys(lastWeek);
 
-// ============ Stock Manager (الجرد / النواقص) ============
-function normalizeCode(code) {
-  const s = String(code == null ? "" : code).trim();
-  const stripped = s.replace(/^0+/, "");
-  return stripped || (s ? "0" : "");
-}
+  const weekCounts = countBy(weekEvents, "key");
+  const lastWeekCounts = countBy(lastWeekEvents, "key");
+  const sortedWeek = Object.entries(weekCounts).sort((a, b) => b[1] - a[1]);
+  const top = sortedWeek[0];
+  const topTrend = top ? pctChange(top[1], lastWeekCounts[top[0]] || 0) : null;
 
-function normHeader(s) {
-  return String(s || "").toLowerCase().replace(/[\s_\-./]/g, "");
-}
+  const maxCount = Math.max(1, ...sortedWeek.map((x) => x[1]));
 
-function findCol(headers, candidates) {
-  const normCandidates = candidates.map(normHeader);
-  const normHeaders = headers.map((h) => ({ raw: h, norm: normHeader(h) }));
-  for (const cand of normCandidates) {
-    const exact = normHeaders.find((h) => h.norm === cand);
-    if (exact) return exact.raw;
-  }
-  for (const cand of normCandidates) {
-    const partial = normHeaders.find((h) => h.norm.includes(cand));
-    if (partial) return partial.raw;
-  }
-  return null;
-}
-
-function readExcelFile(file) {
-  return new Promise((resolve, reject) => {
-    if (typeof XLSX === "undefined") { reject(new Error("مكتبة قراءة الإكسل لسه محملتش - محتاج إنترنت أول مرة تستخدم Stock Manager")); return; }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const wb = XLSX.read(e.target.result, { type: "array" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
-        resolve(rows);
-      } catch (err) { reject(err); }
-    };
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-function detectStockCols(headers) {
-  return {
-    codeCol: findCol(headers, ["MaterialNumber", "MaterialNo", "Material No", "Material Number", "Code", "Item Code", "ItemCode", "SKU", "Item No", "Item Number", "Barcode", "كود", "كود الصنف"]),
-    nameCol: findCol(headers, ["name", "Material Name", "Item Name", "Description", "اسم", "اسم الصنف"]),
-    balCol: findCol(headers, ["UnRestrictedStock", "Un Restricted Stock", "Stock", "Balance", "Qty", "Quantity", "رصيد"]),
-  };
-}
-
-function parseStockRows(rows) {
-  if (!rows.length) return { items: [], headers: [], cols: {} };
-  const headers = Object.keys(rows[0]);
-  const cols = detectStockCols(headers);
-  const items = rows
-    .map((r) => ({ code: normalizeCode(r[cols.codeCol]), name: cols.nameCol ? r[cols.nameCol] : "", balance: parseFloat(r[cols.balCol]) || 0 }))
-    .filter((r) => r.code);
-  return { items, headers, cols };
-}
-
-function detectSalesCols(headers) {
-  return {
-    codeCol: findCol(headers, ["MaterialNumber", "MaterialNo", "Material No", "Material Number", "Code", "Item Code", "ItemCode", "SKU", "كود"]),
-    nameCol: findCol(headers, ["name", "Material Name", "Item Name", "Description", "اسم"]),
-    qtyCol: findCol(headers, ["Quantity", "qty", "Qty", "كمية"]),
-    priceCol: findCol(headers, ["item net price", "net price", "netprice", "Net Amount", "Amount"]),
-    discCol: findCol(headers, ["discount", "خصم"]),
-    invTypeCol: findCol(headers, ["Invoice Type", "InvoiceType", "نوع الفاتورة"]),
-    dateCol: findCol(headers, ["date", "Invoice Date", "تاريخ"]),
-  };
-}
-
-function parseSalesRows(rows) {
-  if (!rows.length) return { items: [], headers: [], cols: {} };
-  const headers = Object.keys(rows[0]);
-  const cols = detectSalesCols(headers);
-  const items = rows
-    .map((r) => ({
-      code: normalizeCode(r[cols.codeCol]),
-      name: cols.nameCol ? r[cols.nameCol] : "",
-      qty: parseFloat(r[cols.qtyCol]) || 0,
-      netPrice: cols.priceCol ? parseFloat(r[cols.priceCol]) || 0 : 0,
-      discount: cols.discCol ? parseFloat(r[cols.discCol]) || 0 : 0,
-      invoiceType: cols.invTypeCol ? String(r[cols.invTypeCol] || "") : "",
-      date: cols.dateCol ? r[cols.dateCol] : "",
-    }))
-    .filter((r) => r.code);
-  return { items, headers, cols };
-}
-
-function computeMonthlyRates(salesItems) {
-  const dates = salesItems.map((s) => new Date(s.date)).filter((d) => !isNaN(d));
-  if (!dates.length) return {};
-  const maxTime = Math.max(...dates.map((d) => d.getTime()));
-  const cutoff = new Date(maxTime);
-  cutoff.setMonth(cutoff.getMonth() - 3);
-  const sums = {};
-  for (const s of salesItems) {
-    const d = new Date(s.date);
-    if (isNaN(d) || d.getTime() < cutoff.getTime()) continue;
-    sums[s.code] = (sums[s.code] || 0) + s.qty;
-  }
-  const rates = {};
-  for (const code in sums) rates[code] = sums[code] / 3;
-  return rates;
-}
-
-function parseSpecialRows(rows) {
-  if (!rows.length) return { codes: [], headers: [] };
-  const headers = Object.keys(rows[0]);
-  let codeCol = findCol(headers, ["MaterialNumber", "MaterialNo", "Material No", "Material Number", "Code", "Item Code", "ItemCode", "SKU", "كود"]);
-  if (!codeCol) codeCol = headers[0]; // ملف Special غالبًا عمود واحد بس - نستخدمه لو مفيش تطابق
-  const codes = rows.map((r) => normalizeCode(r[codeCol])).filter(Boolean);
-  return { codes, headers };
-}
-
-function computeSpecialSalesByMonth(salesItems, specialCodesSet) {
-  const relevant = salesItems.filter((s) => specialCodesSet.has(s.code));
-  const dates = relevant.map((s) => new Date(s.date)).filter((d) => !isNaN(d));
-  if (!dates.length) return [];
-  const maxTime = Math.max(...dates.map((d) => d.getTime()));
-  const maxDate = new Date(maxTime);
-  const months = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(maxDate.getFullYear(), maxDate.getMonth() - i, 1);
-    months.push({ key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString("ar-EG", { month: "short", year: "numeric" }), total: 0 });
-  }
-  relevant.forEach((s) => {
-    const d = new Date(s.date);
-    if (isNaN(d)) return;
-    const key = `${d.getFullYear()}-${d.getMonth()}`;
-    const m = months.find((mo) => mo.key === key);
-    if (m) m.total += s.netPrice || 0;
-  });
-  return months;
-}
-
-function profileKey(type) { return `${type}:${store.currentProfileId}`; }
-
-async function stockManagerCompute(mgr) {
-  const stockItems = (await idbGet(profileKey("stock"))) || [];
-  const salesItems = (await idbGet(profileKey("sales"))) || [];
-  const stockByCode = {};
-  stockItems.forEach((s) => { stockByCode[s.code] = s; });
-  const rates = computeMonthlyRates(salesItems);
-
-  const negative = stockItems.filter((s) => s.balance < 0);
-
-  const urgent = stockItems.filter((s) => {
-    const rate = rates[s.code] || 0;
-    return rate > 0 && s.balance < rate / 4;
-  });
-
-  const lost = stockItems
-    .filter((s) => s.balance <= 0 && (rates[s.code] || 0) > 2)
-    .sort((a, b) => b.balance - a.balance);
-
-  const specialCodesList = mgr.specialFile ? mgr.specialFile.codes : [];
-  const specialCodesSet = new Set(specialCodesList);
-  const special = specialCodesList
-    .map((code) => {
-      const st = stockByCode[code];
-      return st ? { code, name: st.name, balance: st.balance } : null;
-    })
-    .filter((i) => i && i.balance !== 0);
-
-  const specialSalesByMonth = computeSpecialSalesByMonth(salesItems, specialCodesSet);
-
-  const specific = mgr.specificCodes.map((sc) => {
-    const st = stockByCode[sc.code];
-    return { id: sc.id, code: sc.code, name: st ? st.name : "(مش موجود في ملف Stock الحالي)", balance: st ? st.balance : "" };
-  });
-
-  return { negative, urgent, lost, special, specialSales: specialSalesByMonth, specific };
-}
-
-const STOCK_TABS = [
-  { key: "negative", label: "سالبة" },
-  { key: "urgent", label: "Urgent Order" },
-  { key: "lost", label: "Lost Sales" },
-  { key: "special", label: "Special" },
-  { key: "specialSales", label: "📊 Special Sales" },
-  { key: "specific", label: "جرد" },
-];
-
-async function renderStockManager(el) {
-  const mgr = currentManager();
-  const tab = managerView.tab || "urgent";
-  el.innerHTML = `<button class="mgr-back" id="mgrBack">‹ رجوع</button><div class="section-label">Stock Manager</div><p class="empty">جاري تحميل البيانات...</p>`;
-  document.getElementById("mgrBack").onclick = backToGrid;
-  const data = await stockManagerCompute(mgr);
-
-  el.innerHTML = `
-    <button class="mgr-back" id="mgrBack">‹ رجوع</button>
-    <div class="section-label">Stock Manager</div>
-    <div class="mgr-list-item">
-      <div class="row2">ملف Stock: ${mgr.stock ? `محدّث ${new Date(mgr.stock.updatedAt).toLocaleString("ar-EG")} (${mgr.stock.count} صنف)` : "لسه ماترفعش"}</div>
-      <input type="file" id="stockFileInput" accept=".xlsx,.xls,.csv" style="margin-top:6px;" />
-    </div>
-    <div class="mgr-list-item">
-      <div class="row2">ملف Sales: ${mgr.sales ? `محدّث ${new Date(mgr.sales.updatedAt).toLocaleString("ar-EG")} (${mgr.sales.count} صف)` : "لسه ماترفعش"}</div>
-      <input type="file" id="salesFileInput" accept=".xlsx,.xls,.csv" style="margin-top:6px;" />
-    </div>
-    <div class="mgr-list-item">
-      <div class="row2">ملف Special (كود بس): ${mgr.specialFile ? `محدّث ${new Date(mgr.specialFile.updatedAt).toLocaleString("ar-EG")} (${mgr.specialFile.codes.length} كود)` : "لسه ماترفعش"}</div>
-      <input type="file" id="specialFileInput" accept=".xlsx,.xls,.csv" style="margin-top:6px;" />
-    </div>
-    <p id="stockStatus" style="font-size:13px; color:var(--muted); white-space:pre-wrap;"></p>
-    <div class="urgency-row" id="stockTabsRow" style="flex-wrap:wrap;"></div>
-    <input class="mgr-search" id="stockSearch" placeholder="بحث بالكود أو الاسم..." />
-    <div id="stockResultWrap" style="margin-top:12px;"></div>
-  `;
-  document.getElementById("mgrBack").onclick = backToGrid;
-
-  document.getElementById("stockFileInput").onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const statusEl = document.getElementById("stockStatus");
-    statusEl.textContent = "جاري قراءة ملف Stock...";
-    try {
-      const rows = await readExcelFile(file);
-      const { items, headers } = parseStockRows(rows);
-      if (items.length === 0) {
-        statusEl.textContent = `مقدرتش أعرف الأعمدة صح. الأعمدة اللي في الملف: ${headers.join(", ")}\nابعتلي الأسماء دي عشان أظبط الكود.`;
-        return;
-      }
-      if (mgr.stock) {
-        const prevItems = await idbGet(profileKey("stock"));
-        if (prevItems) await idbSet(profileKey("prevStock"), prevItems);
-        mgr.prevStock = { updatedAt: mgr.stock.updatedAt };
-      }
-      await idbSet(profileKey("stock"), items);
-      mgr.stock = { updatedAt: new Date().toISOString(), count: items.length };
-      saveStore();
-      renderStockManager(el);
-    } catch (err) {
-      statusEl.textContent = "حصل خطأ في قراءة الملف: " + err.message;
-    }
-  };
-  document.getElementById("salesFileInput").onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const statusEl = document.getElementById("stockStatus");
-    statusEl.textContent = "جاري قراءة ملف Sales...";
-    try {
-      const rows = await readExcelFile(file);
-      const { items, headers } = parseSalesRows(rows);
-      if (items.length === 0) {
-        statusEl.textContent = `مقدرتش أعرف الأعمدة صح. الأعمدة اللي في الملف: ${headers.join(", ")}\nابعتلي الأسماء دي عشان أظبط الكود.`;
-        return;
-      }
-      await idbSet(profileKey("sales"), items);
-      mgr.sales = { updatedAt: new Date().toISOString(), count: items.length };
-      saveStore();
-      renderStockManager(el);
-    } catch (err) {
-      statusEl.textContent = "حصل خطأ في قراءة الملف: " + err.message;
-    }
-  };
-  document.getElementById("specialFileInput").onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const statusEl = document.getElementById("stockStatus");
-    statusEl.textContent = "جاري قراءة ملف Special...";
-    try {
-      const rows = await readExcelFile(file);
-      const { codes, headers } = parseSpecialRows(rows);
-      if (codes.length === 0) {
-        statusEl.textContent = `مقدرتش ألاقي أكواد في الملف. الأعمدة اللي فيه: ${headers.join(", ")}`;
-        return;
-      }
-      mgr.specialFile = { codes, updatedAt: new Date().toISOString() };
-      saveStore();
-      renderStockManager(el);
-    } catch (err) {
-      statusEl.textContent = "حصل خطأ في قراءة الملف: " + err.message;
-    }
-  };
-
-  const tabsRow = document.getElementById("stockTabsRow");
-  tabsRow.innerHTML = STOCK_TABS.map(
-    (t) => `<button data-tab="${t.key}" class="${t.key === tab ? "sel-now" : ""}" style="margin:2px;">${t.label} (${data[t.key].length})</button>`
-  ).join("");
-  tabsRow.querySelectorAll("[data-tab]").forEach((btn) => {
-    btn.onclick = () => { managerView.tab = btn.dataset.tab; renderStockManager(el); };
-  });
-
-  const searchBox = document.getElementById("stockSearch");
-  searchBox.oninput = () => renderStockTabContent(el, mgr, tab, data, searchBox.value);
-  if (tab === "specialSales") searchBox.style.display = "none";
-  renderStockTabContent(el, mgr, tab, data, "");
-}
-
-function renderStockTabContent(el, mgr, tab, data, q) {
-  const resultWrap = document.getElementById("stockResultWrap");
-  q = (q || "").trim().toLowerCase();
-  const filterList = (list) => (q ? list.filter((i) => String(i.code).toLowerCase().includes(q) || String(i.name || "").toLowerCase().includes(q)) : list);
-
-  if (tab === "specialSales") {
-    const months = data.specialSales;
-    if (months.length === 0) {
-      resultWrap.innerHTML = `<p class="empty">محتاج ترفع ملف Special وملف Sales الأول عشان يظهر الجراف.</p>`;
-      return;
-    }
-    const max = Math.max(...months.map((m) => m.total), 1);
-    resultWrap.innerHTML = `
-      <button class="mgr-add-btn" id="exportSpecialSalesBtn">📤 تصدير</button>
-      <div style="display:flex; align-items:flex-end; gap:8px; height:180px; padding:10px 0;">
-        ${months
-          .map(
-            (m) => `
-          <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;">
-            <div style="font-size:11px; margin-bottom:4px;">${Math.round(m.total)}</div>
-            <div style="width:100%; background:linear-gradient(180deg, var(--turq), var(--navy-2)); border-radius:6px 6px 0 0; height:${Math.max((m.total / max) * 140, 2)}px;"></div>
-            <div style="font-size:10px; color:var(--muted); margin-top:4px;">${m.label}</div>
-          </div>`
-          )
-          .join("")}
-      </div>`;
-    document.getElementById("exportSpecialSalesBtn").onclick = () => {
-      downloadCSV("special-sales.csv", ["label", "total"], months.map((m) => ({ label: m.label, total: m.total.toFixed(2) })));
-    };
-    return;
-  }
-
-  if (tab === "specific") {
-    const list = filterList(data.specific);
-    resultWrap.innerHTML =
-      `<div style="display:flex; gap:8px;"><button class="mgr-add-btn" id="addSpecificBtn" style="flex:1;">+ إضافة كود</button><button class="mgr-add-btn" id="exportSpecificBtn" style="flex:1;">📤 تصدير</button></div>` +
-      (list.length === 0
-        ? `<p class="empty">مفيش أكواد مضافة لسه.</p>`
-        : list
-            .map(
-              (i) => `
-        <div class="mgr-list-item">
-          <div class="row1"><span>${escapeHtml(i.code)} - ${escapeHtml(String(i.name))}</span><span class="del-x" data-delspec="${i.id}">✕</span></div>
-          <div class="row2">الرصيد: ${i.balance}</div>
+  app.innerHTML = `
+    ${top
+      ? `<div class="top-distraction-card">
+          <div class="td-label">أكتر حاجة بتشتتك</div>
+          <div class="td-name">${categoryLabel(top[0])}</div>
+          <div class="td-sub">${top[1]} مرة الأسبوع ده${topTrend != null ? ` · ${topTrend >= 0 ? "↑" : "↓"} ${Math.abs(topTrend)}% عن الأسبوع اللي فات` : ""}</div>
         </div>`
-            )
-            .join(""));
-    document.getElementById("addSpecificBtn").onclick = () => {
-      const code = prompt("اكتب كود الصنف:");
-      if (!code || !code.trim()) return;
-      mgr.specificCodes.push({ id: uid(), code: normalizeCode(code) });
-      saveStore();
-      renderStockManager(el);
-    };
-    document.getElementById("exportSpecificBtn").onclick = () => {
-      downloadCSV("specific.csv", ["code", "name", "balance"], list);
-    };
-    resultWrap.querySelectorAll("[data-delspec]").forEach((btn) => {
-      btn.onclick = () => {
-        mgr.specificCodes = mgr.specificCodes.filter((c) => c.id !== btn.dataset.delspec);
-        saveStore();
-        renderStockManager(el);
-      };
-    });
-    return;
-  }
+      : `<div class="card"><div class="empty-cta"><div class="ec-icon">🌀</div><div class="ec-text">لسه مفيش تشتيت متسجل. سجّل من تبويب "اليوم" أو أثناء جلسة تركيز.</div></div></div>`}
 
-  const list = filterList(data[tab]);
-  resultWrap.innerHTML =
-    `<button class="mgr-add-btn" id="exportTabBtn">📤 تصدير</button>` +
-    (list.length === 0
-      ? `<p class="empty">مفيش أصناف في القايمة دي دلوقتي.</p>`
-      : list
-          .map(
-            (i) => `
-      <div class="mgr-list-item">
-        <div class="row1"><span>${escapeHtml(String(i.code))} - ${escapeHtml(String(i.name || ""))}</span></div>
-        <div class="row2">الرصيد: ${i.balance}</div>
-      </div>`
-          )
-          .join(""));
-  document.getElementById("exportTabBtn").onclick = () => {
-    downloadCSV(tab + ".csv", ["code", "name", "balance"], list);
+    <div class="stat-row" style="margin:14px 0;">
+      <div class="stat-chip"><div class="stat-val">${todayEvents.length}</div><div class="stat-lbl">النهاردة</div></div>
+      <div class="stat-chip"><div class="stat-val">${weekEvents.length}</div><div class="stat-lbl">الأسبوع ده</div></div>
+      <div class="stat-chip"><div class="stat-val">${fmtMin(weekEvents.length * 3)}</div><div class="stat-lbl">وقت متوقع مفقود</div></div>
+    </div>
+
+    ${sortedWeek.length ? `
+      <div class="section-title">التوزيع حسب الفئة (الأسبوع ده)</div>
+      <div class="card">
+        <div class="bars-wrap">
+          ${sortedWeek.slice(0, 6).map(([key, count]) => `
+            <div class="bar-col">
+              <div class="bar-val">${count}</div>
+              <div class="bar-fill" style="height:${Math.max((count / maxCount) * 100, 6)}%;"></div>
+              <div class="bar-lbl">${categoryLabel(key).replace(/^\S+\s/, "")}</div>
+            </div>`).join("")}
+        </div>
+      </div>` : ""}
+
+    <div class="section-title">تسجيل يدوي</div>
+    <button class="btn-secondary" id="logDistBtn">🌀 سجّل تشتيت دلوقتي</button>
+  `;
+  document.getElementById("logDistBtn").onclick = () => {
+    openDistractionSheet((key) => {
+      state.standaloneLogs.push({ id: uid(), key, at: new Date().toISOString() });
+      saveState(); toast("اتسجل — " + categoryLabel(key)); render();
+    });
   };
 }
 
-// تسجيل الـ Service Worker (تخزين مؤقت بس - التطبيق ده أصلًا شغال بالكامل من غير سيرفر)
+/* ============================== شاشة: عادات ============================== */
+function renderHabits(app) {
+  const today = todayKey();
+  app.innerHTML = `
+    <div class="section-title">عاداتك</div>
+    <div class="card">
+      ${state.habits.length === 0
+        ? `<div class="empty-cta"><div class="ec-icon">✅</div><div class="ec-text">ابدأ بعادة بسيطة واحدة وكبّر عليها بالتدريج.</div></div>`
+        : state.habits.map((h) => `
+          <div class="habit-row">
+            <button class="habit-check ${habitDone(h, today) ? "done" : ""}" data-habit="${h.id}">${habitDone(h, today) ? "✓" : ""}</button>
+            <div style="flex:1;">
+              <div class="habit-name ${habitDone(h, today) ? "done-text" : ""}">${escapeHtml(h.name)}</div>
+              <div class="habit-meta">${h.note ? escapeHtml(h.note) + " · " : ""}الأسبوع ده ${habitWeeklyPct(h)}%</div>
+            </div>
+            ${habitStreak(h) > 0 ? `<div class="habit-streak">🔥 ${habitStreak(h)}</div>` : ""}
+            <span class="habit-del" data-delhabit="${h.id}">✕</span>
+          </div>
+        `).join("")}
+    </div>
+
+    <div class="section-title">إضافة سريعة</div>
+    <div class="chip-row">
+      ${HABIT_PRESETS.map((p) => `<button class="chip" data-preset="${escapeHtml(p)}">${p}</button>`).join("")}
+      <button class="chip chip-add" id="customHabitBtn">+ عادة جديدة</button>
+    </div>
+  `;
+  wireHabitRows(today);
+  document.querySelectorAll("[data-delhabit]").forEach((btn) => {
+    btn.onclick = () => { if (confirm("تمسح العادة دي؟")) { state.habits = state.habits.filter((h) => h.id !== btn.dataset.delhabit); saveState(); render(); } };
+  });
+  document.querySelectorAll("[data-preset]").forEach((btn) => {
+    btn.onclick = () => {
+      if (state.habits.some((h) => h.name === btn.dataset.preset)) { toast("العادة دي موجودة أصلاً"); return; }
+      state.habits.push({ id: uid(), name: btn.dataset.preset, note: "", logs: {}, createdAt: new Date().toISOString() });
+      saveState(); toast("اتضافت"); render();
+    };
+  });
+  document.getElementById("customHabitBtn").onclick = () => {
+    openSheet(`
+      <h3>عادة جديدة</h3>
+      <div class="field-label">اسم العادة</div>
+      <input class="text-input" id="newHabitName" placeholder="مثلاً: مذاكرة ٣٠ دقيقة" />
+      <div class="field-label">ملاحظة (اختياري)</div>
+      <input class="text-input" id="newHabitNote" placeholder="مثلاً: قبل النوم" />
+      <button class="btn-primary" id="saveHabitBtn" style="margin-top:14px;">حفظ</button>
+    `);
+    document.getElementById("saveHabitBtn").onclick = () => {
+      const name = document.getElementById("newHabitName").value.trim();
+      if (!name) { toast("اكتب اسم العادة"); return; }
+      state.habits.push({ id: uid(), name, note: document.getElementById("newHabitNote").value.trim(), logs: {}, createdAt: new Date().toISOString() });
+      saveState(); closeSheet(); render();
+    };
+  };
+}
+
+/* ============================== شاشة: طاقة ============================== */
+function renderEnergy(app) {
+  const today = todayKey();
+  const cur = state.energyLogs[today] || { energy: null, mood: null, stress: null, sleep: null };
+  const weekKeys = last7Keys(0).slice().reverse();
+  const maxE = 10;
+
+  app.innerHTML = `
+    <div class="card">
+      <div class="field-label" style="margin-top:0;">مستوى طاقتك دلوقتي (من ١ لـ ١٠)</div>
+      <div class="scale-row" id="energyScale">
+        ${Array.from({ length: 10 }, (_, i) => i + 1).map((n) => `<button class="scale-btn ${cur.energy === n ? "sel" : ""}" data-e="${n}">${n}</button>`).join("")}
+      </div>
+      <div class="field-label">المزاج (اختياري)</div>
+      <div class="scale-row" id="moodScale">
+        ${["😣", "🙁", "😐", "🙂", "😄"].map((em, i) => `<button class="scale-btn ${cur.mood === i ? "sel" : ""}" data-m="${i}" style="font-size:16px;">${em}</button>`).join("")}
+      </div>
+      <div class="field-label">التوتر (اختياري، من ١ لـ ١٠)</div>
+      <div class="scale-row" id="stressScale">
+        ${[2, 4, 6, 8, 10].map((n) => `<button class="scale-btn ${cur.stress === n ? "sel" : ""}" data-s="${n}">${n}</button>`).join("")}
+      </div>
+      <div class="field-label">عدد ساعات النوم (اختياري)</div>
+      <input class="num-input" type="number" min="0" max="14" step="0.5" id="sleepInput" placeholder="مثلاً: ٧" value="${cur.sleep != null ? cur.sleep : ""}" />
+      <button class="btn-primary" id="saveEnergyBtn" style="margin-top:14px;">حفظ طاقة النهاردة</button>
+    </div>
+
+    <div class="section-title">آخر ٧ أيام</div>
+    <div class="card">
+      <div class="bars-wrap">
+        ${weekKeys.map((k) => {
+          const e = state.energyLogs[k];
+          const v = e ? e.energy : 0;
+          const d = new Date(k);
+          const lbl = ["أحد", "اتنين", "تلات", "أربع", "خميس", "جمعة", "سبت"][d.getDay()];
+          return `<div class="bar-col"><div class="bar-val">${e ? e.energy : "-"}</div><div class="bar-fill" style="height:${Math.max((v / maxE) * 100, e ? 6 : 2)}%; ${!e ? "background:var(--line);" : ""}"></div><div class="bar-lbl">${lbl}</div></div>`;
+        }).join("")}
+      </div>
+    </div>
+  `;
+
+  let sel = { energy: cur.energy, mood: cur.mood, stress: cur.stress };
+  document.querySelectorAll("#energyScale [data-e]").forEach((b) => b.onclick = () => { sel.energy = Number(b.dataset.e); refreshScaleUI(); });
+  document.querySelectorAll("#moodScale [data-m]").forEach((b) => b.onclick = () => { sel.mood = Number(b.dataset.m); refreshScaleUI(); });
+  document.querySelectorAll("#stressScale [data-s]").forEach((b) => b.onclick = () => { sel.stress = Number(b.dataset.s); refreshScaleUI(); });
+  function refreshScaleUI() {
+    document.querySelectorAll("#energyScale [data-e]").forEach((b) => b.classList.toggle("sel", Number(b.dataset.e) === sel.energy));
+    document.querySelectorAll("#moodScale [data-m]").forEach((b) => b.classList.toggle("sel", Number(b.dataset.m) === sel.mood));
+    document.querySelectorAll("#stressScale [data-s]").forEach((b) => b.classList.toggle("sel", Number(b.dataset.s) === sel.stress));
+  }
+  document.getElementById("saveEnergyBtn").onclick = () => {
+    if (sel.energy == null) { toast("اختار مستوى الطاقة الأول"); return; }
+    const sleepVal = document.getElementById("sleepInput").value;
+    state.energyLogs[today] = { energy: sel.energy, mood: sel.mood, stress: sel.stress, sleep: sleepVal ? Number(sleepVal) : null, at: new Date().toISOString() };
+    saveState(); toast("اتسجلت طاقة النهاردة"); render();
+  };
+}
+
+/* ============================== شاشة: رؤى ============================== */
+function renderInsights(app) {
+  const insights = buildInsights();
+  app.innerHTML = `
+    <div class="section-title">ملاحظات عن نمطك</div>
+    ${insights.map((i) => `<div class="insight-card ${i.emph ? "emph" : ""}">${i.text}</div>`).join("")}
+    <div class="section-title">اقتراحات</div>
+    ${buildRecommendations().map((r) => `<div class="insight-card">💡 ${r}</div>`).join("")}
+  `;
+}
+
+/* ============================== شاشة: تقدم ============================== */
+function renderProgress(app) {
+  const thisWeek = last7Keys(0), lastWeek = last7Keys(1);
+  const thisSessions = sessionsInKeys(thisWeek), lastSessions = sessionsInKeys(lastWeek);
+  const thisFocusMin = thisSessions.reduce((a, s) => a + sessionActualMin(s), 0);
+  const lastFocusMin = lastSessions.reduce((a, s) => a + sessionActualMin(s), 0);
+  const thisDist = allDistractionEventsInKeys(thisWeek).length;
+  const lastDist = allDistractionEventsInKeys(lastWeek).length;
+  const thisAvgDur = thisSessions.length ? Math.round(thisFocusMin / thisSessions.length) : 0;
+  const lastAvgDur = lastSessions.length ? Math.round(lastFocusMin / lastSessions.length) : 0;
+  const habitPct = habitsAvgWeeklyPct();
+  const thisEnergy = avgEnergyInKeys(thisWeek), lastEnergy = avgEnergyInKeys(lastWeek);
+  const score = computeFocusScore(thisWeek);
+  const growth = Math.round(score * 0.4 + (habitPct || 0) * 0.3 + ((thisEnergy || 0) / 10) * 100 * 0.3);
+
+  function trendHtml(cur, prev, inverse) {
+    if (prev == null || prev === 0) return `<span class="trend-flat">—</span>`;
+    const pct = pctChange(cur, prev);
+    if (pct == null || pct === 0) return `<span class="trend-flat">بدون تغيير</span>`;
+    const good = inverse ? pct < 0 : pct > 0;
+    return `<span class="${good ? "trend-up" : "trend-down"}">${pct > 0 ? "↑" : "↓"} ${Math.abs(pct)}%</span>`;
+  }
+
+  app.innerHTML = `
+    <div class="card">
+      <div class="score-row">
+        <div class="ring" style="--pct:${score}; width:84px; height:84px; background: conic-gradient(var(--sage) calc(var(--pct)*3.6deg), var(--line) 0deg);">
+          <div class="ring-inner"><div class="ring-num">${score}</div><div class="ring-cap">تركيز</div></div>
+        </div>
+        <div>
+          <div class="score-text-title">درجة التركيز — الأسبوع ده</div>
+          <div class="score-text-desc">من إكمال الجلسات، التحكم في المقاطعات، مدة التركيز، والاستمرارية.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">هذا الأسبوع مقابل اللي فات</div>
+    <div class="card">
+      <div class="kv-row"><span class="kv-label">وقت التركيز</span><span class="kv-val">${fmtMin(thisFocusMin)} ${trendHtml(thisFocusMin, lastFocusMin, false)}</span></div>
+      <div class="kv-row"><span class="kv-label">جلسات مكتملة</span><span class="kv-val">${thisSessions.filter(s=>s.completed).length} ${trendHtml(thisSessions.filter(s=>s.completed).length, lastSessions.filter(s=>s.completed).length, false)}</span></div>
+      <div class="kv-row"><span class="kv-label">متوسط الجلسة</span><span class="kv-val">${thisAvgDur}د ${trendHtml(thisAvgDur, lastAvgDur, false)}</span></div>
+      <div class="kv-row"><span class="kv-label">مرات التشتت</span><span class="kv-val">${thisDist} ${trendHtml(thisDist, lastDist, true)}</span></div>
+      <div class="kv-row"><span class="kv-label">إكمال العادات</span><span class="kv-val">${habitPct != null ? habitPct + "%" : "—"}</span></div>
+      <div class="kv-row"><span class="kv-label">متوسط الطاقة</span><span class="kv-val">${thisEnergy != null ? thisEnergy + "/١٠" : "—"} ${trendHtml(thisEnergy || 0, lastEnergy || 0, false)}</span></div>
+    </div>
+
+    <div class="section-title">درجة النمو الشخصي</div>
+    <div class="card">
+      <div class="score-row">
+        <div class="ring" style="--pct:${growth}; width:64px; height:64px; background: conic-gradient(var(--ochre) calc(var(--pct)*3.6deg), var(--line) 0deg);">
+          <div class="ring-inner"><div class="ring-num" style="font-size:16px;">${growth}</div></div>
+        </div>
+        <div class="score-text-desc" style="flex:1;">مجموع موزون من التركيز، العادات، والطاقة — مؤشر عام على تطورك الأسبوع ده.</div>
+      </div>
+    </div>
+
+    <div class="section-title">مراجعة أسبوعية</div>
+    <button class="btn-secondary" id="startReviewBtn">📝 ابدأ مراجعة الأسبوع</button>
+    ${state.weeklyReviews.length ? `
+      <div class="card" style="margin-top:12px;">
+        ${state.weeklyReviews.slice().reverse().slice(0, 3).map((r) => `
+          <div style="margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--line);">
+            <div style="font-weight:700; font-size:13px; margin-bottom:4px;">${new Date(r.createdAt).toLocaleDateString("ar-EG")}</div>
+            <div class="muted" style="font-size:12.5px; line-height:1.6;">${escapeHtml(r.summary)}</div>
+            <div style="font-size:12.5px; margin-top:6px; color:var(--ochre); font-weight:700;">🎯 ${escapeHtml(r.challenge)}</div>
+          </div>
+        `).join("")}
+      </div>` : ""}
+  `;
+  document.getElementById("startReviewBtn").onclick = openWeeklyReviewSheet;
+}
+
+function openWeeklyReviewSheet() {
+  openSheet(`
+    <h3>مراجعة الأسبوع</h3>
+    <div class="sheet-sub">إجابتك بتساعد في ملخص الأسبوع الجاي</div>
+    <div class="field-label" style="margin-top:0;">١. إيه اللي شتتك أكتر؟</div>
+    <input class="text-input" id="rq1" />
+    <div class="field-label">٢. امتى كنت أكتر تركيز؟</div>
+    <input class="text-input" id="rq2" />
+    <div class="field-label">٣. انهي عادة حسّت إنها اتحسنت؟</div>
+    <input class="text-input" id="rq3" />
+    <div class="field-label">٤. عايز تحسن إيه الأسبوع الجاي؟</div>
+    <input class="text-input" id="rq4" />
+    <button class="btn-primary" id="submitReviewBtn" style="margin-top:14px;">إنشاء الملخص</button>
+  `);
+  document.getElementById("submitReviewBtn").onclick = () => {
+    const answers = {
+      q1: document.getElementById("rq1").value.trim(),
+      q2: document.getElementById("rq2").value.trim(),
+      q3: document.getElementById("rq3").value.trim(),
+      q4: document.getElementById("rq4").value.trim(),
+    };
+    const thisWeek = last7Keys(0);
+    const sessions = sessionsInKeys(thisWeek);
+    const events = allDistractionEventsInKeys(thisWeek);
+    const counts = countBy(events, "key");
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    const scoreThis = computeFocusScore(thisWeek), scoreLast = computeFocusScore(last7Keys(1));
+    const diff = pctChange(scoreThis, scoreLast);
+    const summary = `خلصت ${sessions.filter((s) => s.completed).length} جلسة تركيز الأسبوع ده.` +
+      (top ? ` أكتر حاجة شتتتك كانت ${categoryLabel(top[0])}.` : "") +
+      (diff != null && diff !== 0 ? ` درجة تركيزك ${diff > 0 ? "اتحسنت" : "قلت"} ${Math.abs(diff)}%.` : "");
+    const challenge = top ? `قلل تشتيت ${categoryLabel(top[0])} بنسبة ٢٠٪ الأسبوع الجاي.` : (answers.q4 || "حافظ على نفس الاستمرارية الأسبوع الجاي.");
+    state.weeklyReviews.push({ id: uid(), createdAt: new Date().toISOString(), answers, summary, challenge });
+    saveState(); closeSheet(); render();
+  };
+}
+
+/* ============================== الإعدادات (نسخ احتياطي) ============================== */
+function openSettingsSheet() {
+  openSheet(`
+    <h3>الإعدادات</h3>
+    <div class="field-label" style="margin-top:0;">اسمك (اختياري، للترحيب بس)</div>
+    <input class="text-input" id="userNameInput" value="${escapeHtml(state.userName || "")}" placeholder="مثلاً: محمد" />
+    <button class="btn-secondary" id="saveNameBtn" style="margin-top:8px;">حفظ الاسم</button>
+
+    <div class="field-label">النسخ الاحتياطي</div>
+    <div class="btn-row">
+      <button class="btn-secondary" id="exportBtn">⬇ تصدير نسخة</button>
+      <button class="btn-secondary" id="importBtnTrigger">⬆ استيراد نسخة</button>
+    </div>
+    <input type="file" id="importFileInput" accept="application/json" style="display:none;" />
+
+    <div class="field-label">منطقة الخطر</div>
+    <button class="btn-secondary btn-danger" id="resetAllBtn">🗑 مسح كل البيانات</button>
+  `);
+  document.getElementById("saveNameBtn").onclick = () => {
+    state.userName = document.getElementById("userNameInput").value.trim();
+    saveState(); toast("اتحفظ"); closeSheet(); render();
+  };
+  document.getElementById("exportBtn").onclick = () => {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `focus-backup-${todayKey()}.json`; a.click();
+    URL.revokeObjectURL(url);
+  };
+  document.getElementById("importBtnTrigger").onclick = () => document.getElementById("importFileInput").click();
+  document.getElementById("importFileInput").onchange = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        state = Object.assign(defaultState(), parsed);
+        saveState(); toast("اتسترجعت البيانات"); closeSheet(); render();
+      } catch (err) { toast("الملف مش صالح"); }
+    };
+    reader.readAsText(file);
+  };
+  document.getElementById("resetAllBtn").onclick = () => {
+    if (confirm("متأكد؟ هيتمسح كل بياناتك من غير رجعة.")) {
+      state = defaultState(); saveState(); closeSheet(); render();
+    }
+  };
+}
+
+/* ============================== التهيئة ============================== */
+function render() {
+  document.querySelectorAll(".nav-btn").forEach((b) => b.classList.toggle("active", b.dataset.tab === currentTab));
+  const app = document.getElementById("app");
+  if (currentTab === "today") renderToday(app);
+  else if (currentTab === "focus") renderFocus(app);
+  else if (currentTab === "distractions") renderDistractions(app);
+  else if (currentTab === "habits") renderHabits(app);
+  else if (currentTab === "energy") renderEnergy(app);
+  else if (currentTab === "insights") renderInsights(app);
+  else if (currentTab === "progress") renderProgress(app);
+}
+
+document.querySelectorAll(".nav-btn").forEach((b) => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+document.getElementById("settingsBtn").addEventListener("click", openSettingsSheet);
+
+startTimerLoop();
+render();
+
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js").catch(() => {});
 }

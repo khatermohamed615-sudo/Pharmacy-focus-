@@ -1,7 +1,7 @@
-// التطبيق ده أصلًا من غير سيرفر - كل البيانات جوه الجهاز (localStorage). الـ Service
+// التطبيق ده من غير سيرفر خالص - كل البيانات جوه الجهاز (localStorage). الـ Service
 // Worker هنا وظيفته بس إنه يخزّن ملفات التطبيق (HTML/CSS/JS/أيقونات) عشان يفتح
 // حتى لو مفيش إنترنت خالص من أول لحظة بعد أول زيارة.
-const CACHE_NAME = "focus-offline-shell-v8";
+const CACHE_NAME = "focus-app-shell-v9";
 const SHELL_FILES = [
   "./",
   "./index.html",
